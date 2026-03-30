@@ -1,0 +1,284 @@
+// "use client";
+
+// import React from "react";
+// import Image from "next/image";
+// import { Users, Target, ShieldCheck, Zap, MessageSquareQuote } from "lucide-react";
+// import { Card, CardContent } from "@/components/ui/card"; 
+// import { Button } from "@/components/ui/button"; // // যদি Button থেকে Card import করো, check correct import
+
+// // সঠিক import path check করো:
+// // import { Card, CardContent } from "@/components/ui/card";
+
+// export default function AboutUsPage() {
+//   const values = [
+//     {
+//       icon: <Users className="h-8 w-8 text-indigo-500" />,
+//       title: "গ্রাহক-প্রথম",
+//       description: "আমাদের সব সিদ্ধান্তের কেন্দ্রে থাকেন আপনি। আপনার সন্তুষ্টিই আমাদের প্রধান লক্ষ্য।"
+//     },
+//     {
+//       icon: <ShieldCheck className="h-8 w-8 text-rose-500" />,
+//       title: "মানসম্মত পণ্য",
+//       description: "আমরা শুধুমাত্র সেরা এবং আসল পণ্যগুলোই আপনার হাতে পৌঁছে দেওয়ার নিশ্চয়তা দেই।"
+//     },
+//     {
+//       icon: <Target className="h-8 w-8 text-amber-500" />,
+//       title: "আমাদের লক্ষ্য",
+//       description: "সহজ এবং আনন্দদায়ক অনলাইন শপিংয়ের মাধ্যমে আপনার জীবনকে আরও সহজ করা।"
+//     },
+//     {
+//       icon: <Zap className="h-8 w-8 text-emerald-500" />,
+//       title: "দ্রুত ডেলিভারি",
+//       description: "সারাদেশে নিরাপদে এবং দ্রুততম সময়ে আপনার পছন্দের পণ্য ডেলিভারি করা আমাদের প্রতিশ্রুতি।"
+//     }
+//   ];
+
+//   return (
+//     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617] transition-colors duration-500 overflow-hidden relative">
+      
+//       {/* Decorative Background Elements */}
+//       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-b from-violet-500/10 to-transparent rounded-full -z-10 blur-3xl" />
+//       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-t from-indigo-500/10 to-transparent rounded-full -z-10 blur-3xl" />
+
+//       <div className="container mx-auto py-20 md:py-32 px-4 relative">
+        
+//         {/* --- Section 1: Hero/Introduction --- */}
+//         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center mb-28 max-w-7xl mx-auto">
+//           <div className="space-y-6 text-center md:text-left">
+//             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest">
+//               ✨ আমাদের সম্পর্কে জানুন
+//             </div>
+//             <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+//               আপনার বিশ্বস্ত <span className="text-indigo-600">অনলাইন শপিং</span> সঙ্গী
+//             </h1>
+//             <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto md:mx-0">
+//               আমরা শুধু পণ্য বিক্রি করি না, আমরা একটি নির্ভরযোগ্য শপিং অভিজ্ঞতা তৈরি করি। ২০২১ সাল থেকে আমরা গুণমান এবং বিশ্বাসের সাথে গ্রাহকদের সেবা দিয়ে আসছি। 
+//             </p>
+//           </div>
+          
+//           {/* Hero Image (Place a professional image here) */}
+//           <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl shadow-indigo-200 dark:shadow-none ring-1 ring-slate-200 dark:ring-slate-800">
+//             <Image 
+//               src="/path-to-your-about-image.jpg" // এখানে তোমার ই-কমার্সের একটি সুন্দর ছবি বা গুদামঘরের ছবি দাও
+//               alt="Our Story"
+//               fill
+//               className="object-cover"
+//               priority
+//             />
+//             {/* Image fallback/placeholder overlay */}
+//             <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">Image Place</div>
+//           </div>
+//         </div>
+
+//         {/* --- Section 2: Our Values (grid) --- */}
+//         <div className="mb-28 max-w-7xl mx-auto">
+//           <div className="text-center mb-16 space-y-3">
+//             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">আমরা যা বিশ্বাস করি</h2>
+//             <p className="text-muted-foreground text-lg max-w-xl mx-auto">আমাদের সাফল্যের মূল চাবিকাঠি হলো আমাদের কিছু দৃঢ় মূল্যবোধ যা আমরা প্রতিদিন মেনে চলি।</p>
+//           </div>
+          
+//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+//             {values.map((value, index) => (
+//               <Card key={index} className="border-none shadow-lg bg-white/80 dark:bg-slate-900/50 backdrop-blur-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+//                 <CardContent className="p-8 text-center flex flex-col items-center gap-6">
+//                   <div className="h-16 w-16 rounded-3xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center ring-1 ring-slate-200 dark:ring-slate-700">
+//                     {value.icon}
+//                   </div>
+//                   <h4 className="text-2xl font-bold text-slate-900 dark:text-white pt-2">{value.title}</h4>
+//                   <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{value.description}</p>
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* --- Section 3: Testimonial/Mission Quote --- */}
+//         <div className="bg-indigo-600 dark:bg-indigo-700 rounded-3xl p-10 md:p-16 text-white max-w-6xl mx-auto shadow-2xl shadow-indigo-300 dark:shadow-none">
+//           <div className="flex flex-col md:flex-row gap-10 items-center">
+//             <div className="shrink-0 text-white/50">
+//               <MessageSquareQuote size={100} strokeWidth={1} />
+//             </div>
+//             <div className="space-y-6 text-center md:text-left">
+//               <p className="text-2xl md:text-3xl font-medium leading-normal">
+//                 &quot;আমাদের লক্ষ্য শুধু বড় ব্যবসা করা নয়, বরং এমন একটি ই-কমার্স প্ল্যাটফর্ম তৈরি করা যেখানে প্রতিটি গ্রাহক নিজেদের নিরাপদ এবং সম্মানিত মনে করবেন। আমরা বিশ্বাস করি সততা এবং সেবাই আমাদের উন্নতির মূলমন্ত্র।&quot;
+//               </p>
+//               <div className="pt-4">
+//                 <p className="text-lg font-black uppercase tracking-widest text-indigo-100">প্রতিষ্ঠাতা</p>
+//                 <p className="text-indigo-200 font-medium">আপনার নাম/কোম্পানির নাম</p>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+
+//       </div>
+//     </div>
+//   );
+// }
+
+"use client";
+
+import React from "react";
+import Image from "next/image";
+import { 
+  Users, 
+  ShieldCheck, 
+  Zap, 
+  Award, 
+  ShoppingBag, 
+  Truck, 
+  Heart 
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+
+export default function AboutPage() {
+  // স্ট্যাটিস্টিক্স ডেটা
+  const stats = [
+    { label: "সন্তুষ্ট কাস্টমার", value: "১০,০০০+" },
+    { label: "প্রোডাক্ট কালেকশন", value: "৫০০+" },
+    { label: "জেলায় ডেলিভারি", value: "৬৪" },
+    { label: "পজিটিভ রিভিউ", value: "৯৯%" },
+  ];
+
+  // আমাদের ভ্যালু
+  const values = [
+    {
+      icon: <ShieldCheck className="w-6 h-6 text-indigo-600" />,
+      title: "১০০% অরিজিনাল",
+      desc: "আমরা প্রতিটি পণ্যের গুণগত মান নিশ্চিত করি সরাসরি সোর্স থেকে।"
+    },
+    {
+      icon: <Truck className="w-6 h-6 text-emerald-600" />,
+      title: "দ্রুত ডেলিভারি",
+      desc: "আপনার অর্ডার করা পণ্য দ্রুততম সময়ে আপনার দোরগোড়ায় পৌঁছে দেই।"
+    },
+    {
+      icon: <Heart className="w-6 h-6 text-rose-600" />,
+      title: "সেরা সাপোর্ট",
+      desc: "যেকোনো সমস্যায় আমাদের টিম ২৪/৭ আপনাকে সাহায্য করতে প্রস্তুত।"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-500">
+      
+      {/* --- ১. Hero Section (The Hook) --- */}
+      <section className="relative py-20 lg:py-32 overflow-hidden bg-slate-50 dark:bg-slate-900/50">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <h1 className="text-4xl md:text-7xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+              আমরা শুধু পণ্য নয়, <span className="text-indigo-600">বিশ্বাস</span> ফেরি করি।
+            </h1>
+            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 font-medium">
+              আপনার নিত্যদিনের প্রয়োজনকে সহজ এবং আনন্দদায়ক করতে আমরা কাজ করে যাচ্ছি নিরন্তর।
+            </p>
+          </div>
+        </div>
+        {/* Background Blur Effect */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent -z-10" />
+      </section>
+
+      {/* --- ২. Our Story (The Journey) --- */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="relative group">
+              <div className="absolute -inset-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+              <div className="relative aspect-video lg:aspect-square rounded-2xl overflow-hidden shadow-2xl">
+                <Image 
+                  src="/story-image.jpg" // এখানে তোমার অফিসের বা ওয়্যারহাউসের ছবি দাও
+                  alt="Our Story"
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                  ওয়্যারহাউস/টিম ফটো এখানে
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">আমাদের শুরুর গল্প</h2>
+                <div className="w-20 h-1.5 bg-indigo-600 rounded-full"></div>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
+                ২০২১ সালে একটি ছোট্ট স্বপ্ন নিয়ে আমাদের যাত্রা শুরু হয়। তখন আমাদের লক্ষ্য ছিল একটাই—কিভাবে ই-কমার্স কেনাকাটাকে সাধারণ মানুষের কাছে আরও স্বচ্ছ এবং সহজ করা যায়। 
+              </p>
+              <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
+                অনেক চড়াই-উতরাই পার করে আজ আমরা হাজারো পরিবারের আস্থার জায়গা হয়ে উঠেছি। আমরা বিশ্বাস করি, একটি ভালো প্রোডাক্ট শুধু জীবন সহজ করে না, মুখে হাসিও ফোটায়।
+              </p>
+              <div className="flex gap-4 pt-4">
+                 <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+                    <Award className="w-8 h-8 text-indigo-600 mb-2" />
+                    <p className="font-bold dark:text-white text-sm">বেস্ট কোয়ালিটি অ্যাওয়ার্ড</p>
+                 </div>
+                 <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/50">
+                    <Zap className="w-8 h-8 text-emerald-600 mb-2" />
+                    <p className="font-bold dark:text-white text-sm">ফাস্টেস্ট গ্রোয়িং শপ</p>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- ৩. Statistics Section (Social Proof) --- */}
+      <section className="py-20 bg-indigo-600 dark:bg-indigo-700">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat, i) => (
+              <div key={i} className="text-center space-y-2">
+                <h3 className="text-4xl md:text-5xl font-black text-white">{stat.value}</h3>
+                <p className="text-indigo-100 font-medium uppercase tracking-widest text-xs md:text-sm">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- ৪. Core Values (Why Choose Us) --- */}
+      <section className="py-20 bg-slate-50 dark:bg-slate-900/30">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">কেন আমরা আলাদা?</h2>
+             <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">বাজারের হাজারো ভিড়ে আমরা আমাদের গুণমান এবং সেবা দিয়ে নিজেদের আলাদা করেছি।</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {values.map((v, i) => (
+              <Card key={i} className="border-none shadow-xl bg-white dark:bg-slate-900 group hover:-translate-y-2 transition-all duration-300">
+                <CardContent className="p-10 space-y-6">
+                  <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    {v.icon}
+                  </div>
+                  <h4 className="text-xl font-bold dark:text-white">{v.title}</h4>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{v.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- ৫. Call to Action (Final Step) --- */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-4xl mx-auto p-12 rounded-[3rem] bg-slate-900 text-white relative overflow-hidden">
+            <div className="relative z-10 space-y-8">
+              <h2 className="text-3xl md:text-5xl font-bold leading-tight">আপনার শপিং জার্নি শুরু হোক <br/> আমাদের সাথে।</h2>
+              <button className="px-10 py-5 bg-white text-slate-900 font-black rounded-2xl hover:bg-indigo-50 transition-colors uppercase tracking-widest text-sm">
+                এখনই কেনাকাটা করুন
+              </button>
+            </div>
+            {/* Background pattern */}
+            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                <div className="absolute top-10 left-10 w-40 h-40 border-8 border-white rounded-full"></div>
+                <div className="absolute bottom-10 right-10 w-60 h-60 border-8 border-white rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  );
+}
