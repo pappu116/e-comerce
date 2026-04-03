@@ -1,14 +1,13 @@
-// data/products.ts
-
+// types/product.ts
 export interface Product {
-  id: number
-  name: string
-  price: number
-  category: string
-  image: string
-  description: string
+  id: number | string;
+  _id?: string; // MongoDB hole eta thake
+  name: string;
+  price: number;
+  category: string;
+  image: string;
+  description: string;
 }
-
 export const products: Product[] = [
   {
     id: 1,

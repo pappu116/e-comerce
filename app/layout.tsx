@@ -6,7 +6,7 @@ import { ThemeProvider } from "next-themes";
 import Navbar from "@/app/components/navbar";
 import Footer from "@/app/components/footer";
 import { Geist } from "next/font/google";
-import { cn } from "@/lib/utils";
+import { cn } from "@/app/lib/utils";
 import { usePathname } from "next/navigation"; // <-- Pathname hook import korun
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });

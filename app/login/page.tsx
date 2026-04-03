@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation"; // ১. ইমপোর্ট করুন
-import { useAuth } from "@/app/store/useAuth"; // ২. স্টোর ইমপোর্ট করুন
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/app/store/useAuth";
 
+// ================== InputField Component ==================
 const InputField = ({ type, placeholder, value, onChange }: any) => (
   <motion.div whileFocus={{ scale: 1.02 }} className="relative w-full mb-4 group">
     <input
@@ -22,33 +23,50 @@ const InputField = ({ type, placeholder, value, onChange }: any) => (
   </motion.div>
 );
 
+// ================== Main Login Page ==================
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const login = useAuth((state: any) => state.login); // ৩. স্টোর থেকে লগইন ফাংশন নিন
-  
+  const loginAction = useAuth((state: any) => state.login);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // ৪. লগইন লজিক চেক
-    const success = login(email, password);
+    setLoading(true);
+    setError("");
 
-    if (success) {
-      // যদি আগে কোনো পেজ থেকে রিডাইরেক্ট হয়ে আসে (যেমন কার্ট), তবে সেখানে ফেরত যাবে
-      const redirectTo = searchParams.get("redirect") || "/";
-      router.push(redirectTo);
-    } else {
-      alert("Oops! Email বা Password ভুল হয়েছে। সঠিক তথ্য দিন। 🧐");
+    try {
+      const result = await loginAction(email, password);
+
+      if (result.success) {
+        const currentUser = useAuth.getState().user;   // store থেকে user নেওয়া
+
+        const redirectTo = searchParams.get("redirect") || "/";
+
+        if (currentUser?.role?.toLowerCase() === "admin") {
+          router.push("/admin");
+        } else {
+          router.push(redirectTo);
+        }
+      } else {
+        setError(result.message || "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে");
+      }
+    } catch (err: any) {
+      console.error("Login Error:", err);
+      setError(err.response?.data?.message || "লগইন করতে সমস্যা হয়েছে");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-6 relative overflow-hidden">
       
-      {/* Background Animated Blobs (আপনার ডিজাইন কোড) */}
+      {/* Background Animated Blobs */}
       <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 15, repeat: Infinity }} className="absolute top-1/4 -left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[100px] pointer-events-none opacity-40" />
       <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 18, repeat: Infinity }} className="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[100px] pointer-events-none opacity-40" />
 
@@ -81,19 +99,16 @@ export default function LoginPage() {
             onChange={(e: any) => setPassword(e.target.value)}
           />
 
-          <div className="w-full text-right mb-8">
-            <Link href="/forgot-password" size={14} className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
-              Forgot password?
-            </Link>
-          </div>
+          {error && <p className="text-red-500 text-sm mb-4 w-full text-center">{error}</p>}
 
           <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0px 0px 20px rgba(59, 130, 246, 0.5)" }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="submit"
-            className="w-full px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg"
+            disabled={loading}
+            className="w-full px-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold rounded-xl transition-all shadow-lg"
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </motion.button>
         </form>
 
