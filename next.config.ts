@@ -12,10 +12,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
-      {
-        protocol: 'https',
-        hostname: 'via.placeholder.com', // ✅ Ei part-tuku add korun
-      },
+    
       {
         protocol: 'https',
         hostname: 'example.com', // Apnar JSON-e eita ache

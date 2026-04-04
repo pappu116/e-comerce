@@ -20,122 +20,78 @@
 // app/lib/api.ts// app/lib/api.ts
 // app/lib/api.ts// app/lib/api.ts
 
+// app/lib/api.ts
 import axios from "axios";
 
-// ================== Axios Instance ==================
+// ✅ আপনার বর্তমান পিসি/নেটওয়ার্কের IP ব্যবহার করুন
+const BASE_URL = "http://192.168.1.7:5000"; 
+
 const API = axios.create({
-  // baseURL: "http://localhost:5000/api",
-  baseURL: "http://192.168.1.7:5000/api", // Apnar PC-r static IP
+  baseURL: `${BASE_URL}/api`, 
   withCredentials: true,
-  timeout: 10000,
+  timeout: 15000,
 });
 
-// ================== Request Interceptor (Token Attach) ==================
+// ================== Request Interceptor ==================
 API.interceptors.request.use(
   (config) => {
-    // login ba register chara baki shob request-e token jabe
-    const noTokenRoutes = ["/login", "/register", "/auth/login"];
-    const isNoTokenRoute = noTokenRoutes.some(route => config.url?.includes(route));
-
-    if (!isNoTokenRoute) {
+    if (typeof window !== "undefined") {
       const token = localStorage.getItem("token");
-      if (token) {
+      const isAuthRoute = config.url?.match(/\/login|\/register|\/auth/);
+      
+      if (token && !isAuthRoute) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// ================== Response Interceptor (401 Handle) ==================
+// ================== Response Interceptor ==================
 API.interceptors.response.use(
   (response) => response,
   (error) => {
+    // যদি ব্যাকএন্ড থেকে কোনো এরর মেসেজ আসে সেটি কনসোলে সুন্দর করে দেখাবে
+    if (error.response) {
+      console.error("Backend Error Data:", error.response.data);
+    }
+    
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);
   }
 );
 
-// --- ১. Image URL Helper ---
+// --- Helpers ---
 export function getImageUrl(imagePath: string | undefined): string {
   if (!imagePath) return "https://via.placeholder.com/400x400?text=No+Image";
-  if (imagePath.startsWith("http")) return imagePath;
-  
-  // Apnar PC-r IP eikhaneu use korun
-  const BASE_URL = "http://192.168.1.7:5000"; 
-  return `${BASE_URL}${imagePath}`;
+  if (imagePath.startsWith("http")) return imagePath; 
+  return `${BASE_URL}${imagePath}`; 
 }
 
-// --- ২. Cloudinary Upload Helper ---
-// Note: your_preset_name ar your_cloud_name replace korun
-export const uploadToCloudinary = async (file: File) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "v6onivmu"); // replace with your actual preset
-  formData.append("cloud_name", "dofm6n9un");   // replace with your actual cloud name
-
-  try {
-    const res = await axios.post(
-      `https://api.cloudinary.com/v1_1/dofm6n9un/image/upload`,
-      formData
-    );
-    return res.data.secure_url;
-  } catch (error: any) {
-    console.error("Cloudinary Upload Error:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// --- ৩. Product Service ---
+// --- Product Service ---
 export const productService = {
-  // Public Routes
-  getAllPublic: async () => {
-    try {
-      const response = await API.get("/products");
-      return response.data.products || response.data;
-    } catch (error) {
-      return [];
-    }
-  },
-
-  // Admin Routes
+  // ✅ ব্যাকএন্ডের নতুন রাউট অনুযায়ী পাথগুলো আপডেট করা হলো
   getAll: async () => {
-    const response = await API.get("/admin/products");
-    return response.data.products || response.data;
+    const response = await API.get("/admin/products/all");
+    return response.data; 
   },
 
-  create: async (productData: any) => {
-    try {
-      // Backend-e pathanor agey Price ar Stock-ke Number-e convert kora
-      const formattedData = {
-        ...productData,
-        price: Number(productData.price),
-        countInStock: Number(productData.countInStock || 0),
-      };
-
-      const response = await API.post("/admin/products", formattedData);
-      return response.data;
-    } catch (error) {
-      console.error("Create Product Error:", error);
-      throw error;
-    }
+  create: async (formData: FormData) => {
+    // ✅ নোট: আপনার ব্যাকএন্ডে '/api/admin/products' সরাসরি এই পাথে POST রিকোয়েস্ট যাবে
+    const response = await API.post("/admin/products", formData);
+    return response.data;
   },
 
-  update: async (id: string, data: any) => {
-    const formattedData = {
-      ...data,
-      price: data.price ? Number(data.price) : undefined,
-      countInStock: data.countInStock ? Number(data.countInStock) : undefined,
-    };
-    const response = await API.put(`/admin/products/${id}`, formattedData);
+  update: async (id: string, formData: FormData) => {
+    const response = await API.put(`/admin/products/${id}`, formData);
     return response.data;
   },
 
@@ -143,6 +99,42 @@ export const productService = {
     const response = await API.delete(`/admin/products/${id}`);
     return response.data;
   }
+};
+
+// --- Order Service ---
+export const orderService = {
+  getAll: async () => {
+    const response = await API.get("/admin/orders");
+    return response.data;
+  },
+  
+// দ্বিতীয় প্যারামিটার হিসেবে 'status: string' এর বদলে 'updateData: any' ব্যবহার করুন
+updateStatus: async (id: string, updateData: any) => {
+  let payload;
+
+  // যদি শুধু স্ট্যাটাস স্ট্রিং পাঠানো হয় (পুরানো কোডের জন্য)
+  if (typeof updateData === 'string') {
+    payload = { status: updateData.toLowerCase() };
+  } 
+  // যদি অবজেক্ট পাঠানো হয় (যেমন শিপিং মোডাল থেকে আসছে)
+  else {
+    payload = {
+      ...updateData,
+      status: updateData.status?.toLowerCase() // সেফলি স্ট্যাটাস ছোট হাতের করা হচ্ছে
+    };
+  }
+
+  const response = await API.put(`/admin/orders/${id}/status`, payload);
+  return response.data;
+},
+  getStats: async () => {
+    const response = await API.get("/admin/dashboard");
+    return response.data;
+  },
+  delete: async (id: string) => {
+  const response = await API.delete(`/admin/orders/${id}`);
+  return response.data;
+},
 };
 
 export default API;
