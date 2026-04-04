@@ -123,6 +123,7 @@ import { useState } from "react";
 import { User, Mail, Lock } from "lucide-react"; 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/store/useAuth";
+import { authService } from "@/app/lib/api";
 
 // Reusable Input Component
 const InputField = ({ type, placeholder, icon: Icon, value, onChange }: any) => (
@@ -153,31 +154,40 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // ১. পাসওয়ার্ড ম্যাচিং চেক
-    if (formData.password !== formData.confirmPassword) {
-      alert("Oops! Password mile nai. Mathar tar abar chire jabe to! 🤯");
-      return;
-    }
+// handleSubmit ফাংশনটি আপডেট করুন
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    // ২. স্টোরে ডাটা সেভ করা
-    const result = registerAction({
+    if (formData.password.length < 6) {
+        alert("Password min 6 chars er hote hobe, bhai! 😅");
+        return;
+      }
+      
+  if (formData.password !== formData.confirmPassword) {
+    alert("Oops! Password mile nai. 🤯");
+    return;
+  }
+
+  try {
+    const response = await authService.register({
       name: formData.name,
       email: formData.email,
       password: formData.password
     });
 
-    // ৩. রেজাল্ট অনুযায়ী রেসপন্স
-    if (result.success) {
-      alert(result.message);
-      router.push("/login"); // সফল হলে লগইন পেজে পাঠিয়ে দিবে
-    } else {
-      alert(result.message); // ইমেইল অলরেডি থাকলে এরর দেখাবে
+    if (response.success) {
+      alert("Registration Successful! Now please login.");
+      // টোকেন এবং ইউজার ডাটা লোকাল স্টোরেজে সেভ করুন (ঐচ্ছিক, লগইনে করা ভালো)
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("adminUser", JSON.stringify(response.user));
+      
+      router.push("/login"); 
     }
-  };
-
+  } catch (error: any) {
+    const message = error.response?.data?.message || "Registration failed!";
+    alert(message);
+  }
+};
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#020617] p-6 relative overflow-hidden">
       
@@ -217,9 +227,10 @@ export default function RegisterPage() {
           />
           <InputField
             type="password"
-            placeholder="Create Password"
+            placeholder="Create Password (Min 6 characters)"
             icon={Lock}
             value={formData.password}
+            minLength={6} // ব্রাউজার লেভেল ভ্যালিডেশন
             onChange={(e: any) => setFormData({...formData, password: e.target.value})}
           />
           <InputField

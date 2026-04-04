@@ -8,15 +8,21 @@ export default async function ProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;  // ✅ আগে id নিতে হবে
+  const { id } = await params;
 
   if (!id || id === "undefined") notFound();
 
-  const product = await productService.getById(id);  // ✅ এখানে, function এর ভেতরে
-  console.log("Product data:", product); // চেক করুন কী আসছে
+  // ১. এপিআই থেকে রেসপন্স নেওয়া
+  const response = await productService.getById(id);
+  console.log("API Response:", response);
 
+  // ২. আপনার কনসোল অনুযায়ী ডাটা 'response.product' এর ভেতর আছে
+  const product = response?.product;
+
+  // যদি প্রোডাক্ট না পাওয়া যায়
   if (!product) notFound();
 
+  // ৩. ইমেজের ইউআরএল ঠিক করা
   const imageUrl = getImageUrl(product.images?.[0]);
 
   return (
@@ -26,13 +32,20 @@ export default async function ProductPage({
 
           {/* Image Section */}
           <div className="bg-zinc-100 dark:bg-zinc-900 rounded-3xl aspect-square overflow-hidden border dark:border-white/10 relative">
-            <Image
-              src={imageUrl}
-              alt={product.name ?? "Product image"}
-              fill
-              className="object-cover"
-              unoptimized
-            />
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={product.name ?? "Product image"}
+                fill
+                className="object-cover"
+                priority // পেজ লোড স্পিড বাড়ানোর জন্য
+                unoptimized
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-zinc-400">
+                No Image Available
+              </div>
+            )}
           </div>
 
           {/* Details Section */}
@@ -52,13 +65,14 @@ export default async function ProductPage({
                   ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
               }`}>
-                {product.stock > 0 ? "In Stock" : "Out of Stock"}
+                {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
               </span>
             </div>
             <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed">
               {product.description}
             </p>
             <div className="pt-4">
+              {/* ডাটাবেসের পুরো অবজেক্টটি বাটনে পাঠানো হচ্ছে */}
               <AddToCartButton product={product} />
             </div>
           </div>

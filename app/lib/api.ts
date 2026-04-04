@@ -21,6 +21,8 @@
 // app/lib/api.ts// app/lib/api.ts
 
 // app/lib/api.ts
+
+
 import axios from "axios";
 
 // ✅ আপনার বর্তমান পিসি/নেটওয়ার্কের IP ব্যবহার করুন
@@ -47,6 +49,21 @@ API.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+// app/lib/api.ts ফাইলে এটি আপডেট করুন
+    export const authService = {
+      register: async (userData: any) => {
+        // আগে ছিল "/register", এখন হবে "/auth/register"
+        const response = await API.post("/auth/register", userData); 
+        return response.data;
+      },
+
+      login: async (credentials: any) => {
+        // আগে ছিল "/login", এখন হবে "/auth/login"
+        const response = await API.post("/auth/login", credentials);
+        return response.data;
+      }
+    };
 
 // ================== Response Interceptor ==================
 API.interceptors.response.use(
@@ -84,6 +101,17 @@ export const productService = {
     return response.data; 
   },
 
+    // ✅ সঠিক এবং আপডেট করা ফাংশন
+    getById: async (id: string) => {
+      try {
+        // '/admin/products' এর বদলে সাধারণ '/products' ব্যবহার করুন
+        const response = await API.get(`/products/${id}`); 
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        throw error;
+      }
+    },
   create: async (formData: FormData) => {
     // ✅ নোট: আপনার ব্যাকএন্ডে '/api/admin/products' সরাসরি এই পাথে POST রিকোয়েস্ট যাবে
     const response = await API.post("/admin/products", formData);
@@ -107,7 +135,7 @@ export const orderService = {
     const response = await API.get("/admin/orders");
     return response.data;
   },
-  
+
 // দ্বিতীয় প্যারামিটার হিসেবে 'status: string' এর বদলে 'updateData: any' ব্যবহার করুন
 updateStatus: async (id: string, updateData: any) => {
   let payload;
