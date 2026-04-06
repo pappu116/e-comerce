@@ -34,34 +34,41 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
 
-    try {
-      const result = await loginAction(email, password);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-      if (result.success) {
-        const currentUser = useAuth.getState().user;   // store থেকে user নেওয়া
+  try {
+    const result = await loginAction(email, password);
 
-        const redirectTo = searchParams.get("redirect") || "/";
+    if (result.success) {
+      // একটু সময় দিয়ে store আপডেট হতে দাও
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-        if (currentUser?.role?.toLowerCase() === "admin") {
-          router.push("/admin");
-        } else {
-          router.push(redirectTo);
-        }
-      } else {
-        setError(result.message || "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে");
+      const currentUser = useAuth.getState().user;
+
+      if (!currentUser) {
+        setError("User data not found after login");
+        return;
       }
-    } catch (err: any) {
-      console.error("Login Error:", err);
-      setError(err.response?.data?.message || "লগইন করতে সমস্যা হয়েছে");
-    } finally {
-      setLoading(false);
+
+      console.log("✅ Login successful - Role:", currentUser.role);
+
+      const redirectPath = currentUser.role === "admin" ? "/admin" : "/profile";
+
+      router.replace(redirectPath);   // replace ব্যবহার করা হয়েছে
+    } else {
+      setError(result.message || "Login failed");
     }
-  };
+  } catch (err: any) {
+    console.error("Login error:", err);
+    setError("লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-6 relative overflow-hidden">

@@ -116,11 +116,11 @@
 //     )
 //   )
 // );
-
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
 import API from "@/app/lib/api";
 
+// ইউজারের ডাটা টাইপ
 interface User {
   _id?: string;
   name: string;
@@ -128,6 +128,7 @@ interface User {
   role: "admin" | "user";
 }
 
+// অথেনটিকেশন স্টেটের টাইপ
 interface AuthState {
   user: User | null;
   isLoggedIn: boolean;
@@ -142,23 +143,22 @@ export const useAuth = create<AuthState>()(
   devtools(
     persist(
       (set) => ({
+        // --- ইনিশিয়াল স্টেট ---
         user: null,
         isLoggedIn: false,
         loading: false,
         error: null,
 
-        // ================== লগইন ফাংশন ==================
-        login: async (email: string, password: string) => {
+        // --- লগইন ফাংশন ---
+        login: async (email, password) => {
           set({ loading: true, error: null });
 
           try {
             const response = await API.post("/auth/login", { email, password });
-            
-            // Backend theke data destruct kora
             const { token, user, success, message } = response.data;
 
             if (success && token) {
-              // Token local storage-e rakha
+              // ব্রাউজারের লোকাল স্টোরেজে টোকেন রাখা (Axios Interceptor এর জন্য)
               localStorage.setItem("token", token);
               
               set({
@@ -168,58 +168,55 @@ export const useAuth = create<AuthState>()(
                 error: null,
               });
 
-              console.log("✅ Login Successful! Role:", user?.role);
               return { success: true };
             } else {
-              set({ error: message || "Login failed", loading: false });
-              return { success: false, message: message || "Login failed" };
+              const failMsg = message || "লগইন ব্যর্থ হয়েছে";
+              set({ error: failMsg, loading: false });
+              return { success: false, message: failMsg };
             }
           } catch (err: any) {
-            console.error("❌ Full Login Error Details:", {
-              message: err.message,
-              status: err.response?.status,
-              data: err.response?.data,
-            });
-
-            const errorMsg = err.message === "Network Error" 
-              ? "Backend সার্ভার চালু নেই বা CORS সমস্যা হয়েছে।" 
-              : (err.response?.data?.message || "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে");
+            const errorMsg = err.response?.data?.message || 
+                            (err.message === "Network Error" ? "সার্ভার কানেকশন এরর" : "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে");
 
             set({ error: errorMsg, loading: false });
             return { success: false, message: errorMsg };
           }
         },
 
-        // ================== লগআউট ==================
+        // --- লগআউট ফাংশন ---
         logout: () => {
           localStorage.removeItem("token");
+          // স্টেট রিসেট করা
           set({ user: null, isLoggedIn: false, error: null });
           console.log("🚪 User Logged Out");
         },
 
-        // ================== অথেনটিকেশন চেক ==================
+        // --- অথেনটিকেশন চেক (পেজ রিফ্রেশ দিলে ইউজার ডাটা ফিরে পেতে) ---
         checkAuth: async () => {
           const token = localStorage.getItem("token");
+          
           if (!token) {
             set({ isLoggedIn: false, user: null });
             return;
           }
 
           try {
+            // ব্যাকেন্ড থেকে ইউজারের কারেন্ট ডাটা নিয়ে আসা
             const response = await API.get("/auth/me"); 
             set({ 
               user: response.data.user || response.data, 
               isLoggedIn: true 
             });
           } catch (err) {
-            console.log("Token invalid or expired");
+            console.log("Session expired or invalid token");
             localStorage.removeItem("token");
             set({ user: null, isLoggedIn: false });
           }
         },
       }),
       {
-        name: "auth-storage",
+        name: "auth-storage", // LocalStorage কী (Key) নাম
+        // আমরা শুধু ইউজার এবং লগইন স্ট্যাটাস সেভ রাখবো
         partialize: (state) => ({ 
           user: state.user, 
           isLoggedIn: state.isLoggedIn 

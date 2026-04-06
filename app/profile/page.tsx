@@ -625,63 +625,62 @@
 //   );
 // }
 
-"use client";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Package, Heart, MapPin, Bell, ShieldCheck, Settings, LayoutDashboard } from "lucide-react";
+
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { LogOut, LayoutDashboard, Package, Heart, MapPin, Bell, ShieldCheck, Settings } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from "@/app/store/useAuth";
 
-// কম্পোনেন্ট ইমপোর্ট
+import QuickStar from "./quick-stats";
+import DashboardOverview from "./DashboardOverview";
+import OrdersSection from "../components/OrdersSection";
 import WishlistSection from "../components/WishlistSection";
-import OrdersSection from "../components/OrdersSection"; 
 import AddressesSection from "../components/AddressesSection";
 import NotificationsSection from "../components/NotificationsSection";
 import PrivacySection from "../components/PrivacySection";
 import SettingsSection from "../components/SettingsSection";
-import QuickStar from "./quick-stats"; 
-import WalletHistory from "./WalletHistory";
-import RewardRedeem from "./RewardRedeem";
-import DashboardOverview from "./DashboardOverview"; 
-import ProcessingOrders from "./ProcessingOrders"; // আপনার নতুন এনিমেটেড ট্রাক কম্পোনেন্ট
 
 export default function ProfilePage() {
-  const { user, logout, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, logout, checkAuth, loading: authLoading } = useAuth();
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isChecking, setIsChecking] = useState(true);
 
-  // ডাটা রেন্ডারিং লজিক
-  const renderContent = () => {
-    switch (activeTab) {
-      case "dashboard": 
-        return <DashboardOverview setActiveTab={setActiveTab} />;
-      
-      // QuickStar (১ নম্বর সেকশন) থেকে আসা ID
-      case "orders": 
-        return <OrdersSection />; 
-      case "wallet": 
-        return <WalletHistory />; 
-      case "rewards": 
-        return <RewardRedeem />;
-      case "processing": // ৩ নম্বর কার্ডে ক্লিক করলে এটি লোড হবে
-        return <ProcessingOrders />;
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
-      // Sidebar মেনু থেকে আসা Label
-      case "My Orders": 
-        return <OrdersSection />;
-      case "Wishlist": 
-        return <WishlistSection />;
-      case "Addresses": 
-        return <AddressesSection />;
-      case "Notifications": 
-        return <NotificationsSection />;
-      case "Security & Privacy": 
-        return <PrivacySection />;
-      case "Settings": 
-        return <SettingsSection user={user} />;
-      
-      default: 
-        return <DashboardOverview setActiveTab={setActiveTab} />;
+  useEffect(() => {
+    // যদি এখনো loading চলছে তাহলে অপেক্ষা করো
+    if (authLoading) return;
+
+    if (isLoggedIn && user) {
+      setIsChecking(false);
+
+      // অ্যাডমিন হলে অ্যাডমিনে পাঠাও
+      if (user.role === "admin") {
+        router.replace("/admin");
+      }
+    } 
+    else if (!isLoggedIn && !isChecking && !authLoading) {
+      router.replace("/login?redirect=/profile");
     }
-  };
+  }, [isLoggedIn, user, authLoading, router, isChecking]);
+
+  if (isChecking || authLoading || !isLoggedIn || !user) {
+    return (
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center text-white">
+        <div className="text-center">
+          <p className="text-xl font-medium">Loading your profile...</p>
+          <p className="text-sm text-slate-400 mt-2">Please wait</p>
+        </div>
+      </div>
+    );
+  }
 
   const menu = [
     { icon: LayoutDashboard, label: "dashboard" },
@@ -693,70 +692,70 @@ export default function ProfilePage() {
     { icon: Settings, label: "Settings" },
   ];
 
-  if (!isLoggedIn) return (
-    <div className="min-h-screen bg-[#020617] flex items-center justify-center text-white font-black italic uppercase tracking-widest">
-      Loading...
-    </div>
-  );
+  const renderContent = () => {
+    switch (activeTab) {
+      case "dashboard": return <DashboardOverview setActiveTab={setActiveTab} />;
+      case "My Orders": return <OrdersSection />;
+      case "Wishlist": return <WishlistSection />;
+      case "Addresses": return <AddressesSection />;
+      case "Notifications": return <NotificationsSection />;
+      case "Security & Privacy": return <PrivacySection />;
+      case "Settings": return <SettingsSection user={user} />;
+      default: return <DashboardOverview setActiveTab={setActiveTab} />;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white p-4 md:p-12 font-sans">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10">
-        
-        {/* --- Sidebar (Left) --- */}
+    <div className="min-h-screen bg-[#020617] text-white p-4 md:p-12">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Sidebar - তোমার আগের কোড একই রাখো */}
         <aside className="lg:col-span-4 space-y-6">
-          <div className="p-8 bg-white/5 border border-white/10 rounded-[2.5rem] text-center backdrop-blur-xl relative overflow-hidden group">
-             <div className="absolute inset-0 bg-indigo-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-             <div className="w-24 h-24 mx-auto mb-4 bg-indigo-600 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl border-4 border-white/10 relative z-10">
-                {user?.name?.charAt(0).toUpperCase()}
-             </div>
-             <h2 className="text-xl font-black uppercase italic tracking-tight relative z-10">{user?.name}</h2>
-             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 mb-6">{user?.email}</p>
-             <button onClick={logout} className="relative z-10 w-full py-4 bg-red-500/10 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-500 hover:text-white transition-all">
-               Logout Account
-             </button>
+          <div className="p-8 bg-white/5 border border-white/10 rounded-3xl text-center backdrop-blur-xl">
+            <div className="w-24 h-24 mx-auto mb-4 bg-indigo-600 rounded-full flex items-center justify-center text-4xl font-black border-4 border-white/20">
+              {user.name?.charAt(0).toUpperCase()}
+            </div>
+            <h2 className="text-2xl font-bold">{user.name}</h2>
+            <p className="text-slate-400 mt-1">{user.email}</p>
+
+            <button
+              onClick={() => { logout(); router.push("/login"); }}
+              className="mt-8 w-full py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-semibold transition-all flex items-center justify-center gap-2"
+            >
+              <LogOut size={18} /> Logout
+            </button>
           </div>
 
-          <nav className="p-3 bg-white/5 border border-white/10 rounded-[2.5rem] space-y-1">
+          <nav className="p-4 bg-white/5 border border-white/10 rounded-3xl space-y-1">
             {menu.map((item) => (
-              <button 
-                key={item.label} 
-                onClick={() => setActiveTab(item.label)} 
-                className={`flex items-center gap-4 w-full p-4 rounded-2xl transition-all relative overflow-hidden group ${
-                  activeTab === item.label ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-white/5'
+              <button
+                key={item.label}
+                onClick={() => setActiveTab(item.label)}
+                className={`flex items-center gap-4 w-full p-4 rounded-2xl transition-all ${
+                  activeTab === item.label ? "bg-indigo-600 text-white" : "text-slate-400 hover:bg-white/10"
                 }`}
               >
-                <item.icon size={20} className={activeTab === item.label ? "text-white" : "group-hover:text-indigo-400"} />
-                <span className="font-black uppercase italic text-xs tracking-wider">{item.label}</span>
-                {activeTab === item.label && (
-                   <motion.div layoutId="navIndicator" className="absolute left-0 w-1 h-6 bg-white rounded-full" />
-                )}
+                <item.icon size={20} />
+                <span className="font-semibold">{item.label}</span>
               </button>
             ))}
           </nav>
         </aside>
 
-        {/* --- Main Content Area (Right) --- */}
-        <main className="lg:col-span-8 space-y-8">
-          
-          {/* ১ নম্বর সেকশন (Quick Stats) */}
+        <main className="lg:col-span-8">
           <QuickStar setActiveTab={setActiveTab} />
-          
-          {/* ২ নম্বর ফাঁকা জায়গা (Dynamic Content) */}
-          <div className="relative">
-            <AnimatePresence mode="wait">
-              <motion.div 
-                key={activeTab} 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="min-h-[400px]"
-              >
-                {renderContent()}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="mt-6"
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
