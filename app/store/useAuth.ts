@@ -116,6 +116,9 @@
 //     )
 //   )
 // );
+
+
+
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
 import API from "@/app/lib/api";
@@ -133,21 +136,27 @@ interface AuthState {
   user: User | null;
   isLoggedIn: boolean;
   loading: boolean;
+  isHydrated: boolean; // ডাটা রিস্টোর হয়েছে কি না চেক করতে
   error: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  setHydrated: () => void;
 }
 
 export const useAuth = create<AuthState>()(
   devtools(
     persist(
       (set) => ({
-        // --- ইনিশিয়াল স্টেট ---
+        // --- ইনিশিয়াল স্টেট ---
         user: null,
         isLoggedIn: false,
         loading: false,
+        isHydrated: false, // শুরুতে false থাকবে
         error: null,
+
+        // Hydration সম্পন্ন হলে এটি কল হবে
+        setHydrated: () => set({ isHydrated: true }),
 
         // --- লগইন ফাংশন ---
         login: async (email, password) => {
@@ -158,7 +167,7 @@ export const useAuth = create<AuthState>()(
             const { token, user, success, message } = response.data;
 
             if (success && token) {
-              // ব্রাউজারের লোকাল স্টোরেজে টোকেন রাখা (Axios Interceptor এর জন্য)
+              // লোকাল স্টোরেজে টোকেন রাখা
               localStorage.setItem("token", token);
               
               set({
@@ -170,7 +179,7 @@ export const useAuth = create<AuthState>()(
 
               return { success: true };
             } else {
-              const failMsg = message || "লগইন ব্যর্থ হয়েছে";
+              const failMsg = message || "লগইন ব্যর্থ হয়েছে";
               set({ error: failMsg, loading: false });
               return { success: false, message: failMsg };
             }
@@ -184,43 +193,72 @@ export const useAuth = create<AuthState>()(
         },
 
         // --- লগআউট ফাংশন ---
-        logout: () => {
-          localStorage.removeItem("token");
-          // স্টেট রিসেট করা
-          set({ user: null, isLoggedIn: false, error: null });
-          console.log("🚪 User Logged Out");
+        logout: async () => {
+          set({ loading: true });
+
+          try {
+            // Backend logout call
+            await API.post("/auth/logout");
+            console.log("✅ Backend logout successful");
+          } catch (err) {
+            console.warn("⚠️ Backend logout failed, clearing local state anyway", err);
+          } finally {
+            localStorage.removeItem("token");
+            set({ 
+              user: null, 
+              isLoggedIn: false, 
+              error: null,
+              loading: false 
+            });
+            console.log("🚪 User Logged Out Successfully");
+          }
         },
 
-        // --- অথেনটিকেশন চেক (পেজ রিফ্রেশ দিলে ইউজার ডাটা ফিরে পেতে) ---
+        // --- অথেনটিকেশন চেক ---
         checkAuth: async () => {
           const token = localStorage.getItem("token");
           
           if (!token) {
-            set({ isLoggedIn: false, user: null });
+            set({ isLoggedIn: false, user: null, loading: false });
             return;
           }
 
           try {
-            // ব্যাকেন্ড থেকে ইউজারের কারেন্ট ডাটা নিয়ে আসা
-            const response = await API.get("/auth/me"); 
-            set({ 
-              user: response.data.user || response.data, 
-              isLoggedIn: true 
+            const response = await API.get("/auth/me", {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
             });
-          } catch (err) {
-            console.log("Session expired or invalid token");
+
+            const userData = response.data.user || response.data;
+
+            set({ 
+              user: userData, 
+              isLoggedIn: true,
+              loading: false 
+            });
+
+          } catch (err: any) {
+            console.log("❌ CheckAuth failed:", err.response?.data || err.message);
             localStorage.removeItem("token");
-            set({ user: null, isLoggedIn: false });
+            set({ 
+              user: null, 
+              isLoggedIn: false,
+              loading: false 
+            });
           }
         },
       }),
       {
-        name: "auth-storage", // LocalStorage কী (Key) নাম
-        // আমরা শুধু ইউজার এবং লগইন স্ট্যাটাস সেভ রাখবো
+        name: "auth-storage", // LocalStorage Key Name
         partialize: (state) => ({ 
           user: state.user, 
           isLoggedIn: state.isLoggedIn 
         }),
+        // ✅ Hydration সম্পন্ন হওয়ার পর setHydrated কল করবে
+        onRehydrateStorage: (state) => {
+          return () => state?.setHydrated();
+        },
       }
     )
   )

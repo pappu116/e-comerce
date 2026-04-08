@@ -160,25 +160,41 @@ export default function AddMemberModal({ isOpen, onClose, onCreated }: Props) {
                 />
               </ModalField>
 
-              {/* Role */}
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3 ml-1">Assign Role</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {['user', 'admin'].map(role => (
+                {/* Role Section - Fixed Version */}
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3 ml-1">Assign Role</p>
+                  <div className="grid grid-cols-2 gap-3">
                     <button
-                      key={role}
-                      onClick={() => setFormData(p => ({ ...p, role }))}
+                      type="button" // এটি নিশ্চিত করে যে ফর্ম সাবমিট হবে না
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setFormData(prev => ({ ...prev, role: 'user' }));
+                      }}
                       className={`py-3 sm:py-4 rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
-                        formData.role === role
-                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200 dark:shadow-none'
-                          : 'bg-slate-50 dark:bg-black/20 text-slate-400 border-slate-100 dark:border-slate-800 hover:border-indigo-200'
+                        formData.role === 'user'
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200'
+                          : 'bg-slate-50 dark:bg-black/20 text-slate-400 border-slate-100 dark:border-slate-800'
                       }`}
                     >
-                      {role === 'admin' ? '⚡ Admin' : '👤 User'}
+                      👤 User
                     </button>
-                  ))}
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setFormData(prev => ({ ...prev, role: 'admin' }));
+                      }}
+                      className={`py-3 sm:py-4 rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                        formData.role === 'admin'
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200'
+                          : 'bg-slate-50 dark:bg-black/20 text-slate-400 border-slate-100 dark:border-slate-800'
+                      }`}
+                    >
+                      ⚡ Admin
+                    </button>
+                  </div>
                 </div>
-              </div>
 
               <button
                 onClick={handleCreate}

@@ -57,7 +57,7 @@ export default function EditUserSidebar({ customer, isOpen, onClose, onUpdated, 
     }
     setIsSaving(true);
     try {
-      await API.put(`/auth/users/${customer._id}`, { name: updatedName, email: updatedEmail });
+      await API.put(`/admin/users/${customer._id}`, { name: updatedName, email: updatedEmail });
       onUpdated({ ...customer, name: updatedName, email: updatedEmail });
       toast.success('✅ প্রোফাইল আপডেট হয়েছে!');
       onClose();

@@ -17,14 +17,15 @@
 //   },
 // };
 
-// app/lib/api.ts// app/lib/api.ts
-// app/lib/api.ts// app/lib/api.ts
+
+
+
 
 // app/lib/api.ts
 import axios from "axios";
 import { useAuth } from "@/app/store/useAuth"; 
 
-const BASE_URL = "http://192.168.1.7:5000"; 
+const BASE_URL = "http://localhost:5000"; 
 
 const API = axios.create({
   baseURL: `${BASE_URL}/api`, 

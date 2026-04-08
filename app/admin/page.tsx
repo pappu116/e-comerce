@@ -1,256 +1,3 @@
-// "use client";
-
-// import React, { useState, useMemo, useEffect } from 'react';
-// import { useRouter } from 'next/navigation';
-// import { 
-//   DollarSign, ShoppingCart, Users, Package, 
-//   TrendingUp, Search, Loader2 
-// } from 'lucide-react';
-// import { Input } from "@/components/ui/input"; 
-// import DataTable from './components/DataTable';
-// import API from '@/app/lib/api'; 
-// import { useAuth } from "@/app/store/useAuth";
-
-// export default function AdminDashboard() {
-//   const router = useRouter();
-//   const { user, isLoggedIn, loading: authLoading, checkAuth } = useAuth();
-
-//   const [searchQuery, setSearchQuery] = useState("");
-//   const [loading, setLoading] = useState(true);
-//   const [isChecking, setIsChecking] = useState(true);   // ← নতুন যোগ করা হয়েছে
-
-//   const [data, setData] = useState<any>({
-//     stats: {
-//       totalRevenue: 0,
-//       totalOrders: 0,
-//       totalCustomers: 0,
-//       totalProducts: 0
-//     },
-//     recentOrders: []
-//   });
-
-//   // ================== Authentication Check ==================
-//   useEffect(() => {
-//     checkAuth();
-//   }, [checkAuth]);
-
-//   // ================== Protection Logic ==================
-//   useEffect(() => {
-//     if (authLoading) return;
-
-//     if (!isLoggedIn) {
-//       router.replace("/login?redirect=/admin");
-//       return;
-//     }
-
-//     if (isLoggedIn && user) {
-//       setIsChecking(false);
-
-//       // যদি অ্যাডমিন না হয় তাহলে প্রোফাইলে পাঠাও
-//       if (user.role !== "admin") {
-//         router.replace("/profile");
-//         return;
-//       }
-
-//       // অ্যাডমিন হলে ড্যাটা লোড করো
-//       fetchStats();
-//     }
-//   }, [isLoggedIn, user, authLoading, router]);
-
-//   const fetchStats = async () => {
-//     try {
-//       setLoading(true);
-//       const response = await API.get('/admin/dashboard');
-      
-//       if (response.data && response.data.success) {
-//         setData({
-//           stats: {
-//             totalRevenue: response.data.stats?.totalSales || response.data.stats?.totalRevenue || 0,
-//             totalOrders: response.data.stats?.totalOrders || 0,
-//             totalCustomers: response.data.stats?.totalUsers || response.data.stats?.totalCustomers || 0,
-//             totalProducts: response.data.stats?.totalProducts || 0
-//           },
-//           recentOrders: response.data.recentOrders || []
-//         });
-//       }
-//     } catch (error: any) {
-//       console.error("Dashboard Fetch Error:", error.response?.data || error.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const statsCards = [
-//     {
-//       title: "Total Revenue",
-//       value: `৳${(data.stats.totalRevenue || 0).toLocaleString()}`,
-//       change: "+12.5%", 
-//       icon: DollarSign,
-//       color: "text-emerald-600",
-//       bg: "bg-emerald-100 dark:bg-emerald-900/30"
-//     },
-//     {
-//       title: "Total Orders",
-//       value: data.stats.totalOrders || 0,
-//       change: "+8.2%",
-//       icon: ShoppingCart,
-//       color: "text-blue-600",
-//       bg: "bg-blue-100 dark:bg-blue-900/30"
-//     },
-//     {
-//       title: "Total Customers",
-//       value: data.stats.totalCustomers || 0,
-//       change: "+5.1%",
-//       icon: Users,
-//       color: "text-violet-600",
-//       bg: "bg-violet-100 dark:bg-violet-900/30"
-//     },
-//     {
-//       title: "Total Products",
-//       value: data.stats.totalProducts || 0,
-//       change: "-2.4%",
-//       icon: Package,
-//       color: "text-amber-600",
-//       bg: "bg-amber-100 dark:bg-amber-900/30"
-//     },
-//   ];
-
-//   const filteredOrders = useMemo(() => {
-//     const orders = data.recentOrders || [];
-//     return orders.filter((order: any) => 
-//       order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//       order.user?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-//     );
-//   }, [searchQuery, data.recentOrders]);
-
-//   const columns = [
-//     { key: "_id", label: "Order ID" },
-//     { 
-//       key: "user", 
-//       label: "Customer",
-//       render: (user: any) => user?.name || 'Guest'
-//     },
-//     { 
-//       key: "totalAmount", 
-//       label: "Amount",
-//       render: (amount: number) => <span className="font-bold text-slate-900 dark:text-white">৳{(amount || 0).toLocaleString()}</span>
-//     },
-//     { 
-//       key: "status", 
-//       label: "Status",
-//       render: (status: string) => {
-//         const style: any = {
-//           delivered: "bg-emerald-100 text-emerald-700",
-//           pending: "bg-amber-100 text-amber-700",
-//           shipped: "bg-blue-100 text-blue-700",
-//           processing: "bg-indigo-100 text-indigo-700",
-//           cancelled: "bg-red-100 text-red-700",
-//         };
-//         return (
-//           <span className={`px-3 py-1 text-[10px] font-black rounded-xl uppercase tracking-widest ${style[status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>
-//             {status || 'Unknown'}
-//           </span>
-//         );
-//       }
-//     },
-//     { 
-//       key: "createdAt", 
-//       label: "Date",
-//       render: (date: string) => date ? new Date(date).toLocaleDateString('en-GB') : 'N/A'
-//     },
-//   ];
-
-//   // Loading State
-//   if (authLoading || isChecking || loading) {
-//     return (
-//       <div className="h-screen flex flex-col items-center justify-center gap-4 bg-slate-950">
-//         <Loader2 className="animate-spin text-blue-600" size={48} />
-//         <p className="text-sm font-black uppercase tracking-widest text-slate-400 animate-pulse">
-//           Loading Admin Dashboard...
-//         </p>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="space-y-6 md:space-y-10 max-w-[1600px] mx-auto px-4 py-8">
-//       {/* Header */}
-//       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-//         <div className="space-y-1">
-//           <h1 className="text-2xl md:text-4xl font-black text-white tracking-tighter uppercase italic">
-//             Welcome back, {user?.name || "Admin"}
-//           </h1>
-//           <p className="text-sm md:text-base text-gray-500 font-medium font-mono">
-//             / Dashboard / Statistics / Live Data
-//           </p>
-//         </div>
-
-//         <div className="relative w-full xl:w-[450px] group">
-//           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
-//             <Search size={20} />
-//           </div>
-//           <Input 
-//             placeholder="Quick find orders..." 
-//             className="pl-12 h-14 w-full bg-white/5 border border-white/10 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500/20 text-sm font-bold text-white"
-//             value={searchQuery}
-//             onChange={(e) => setSearchQuery(e.target.value)}
-//           />
-//         </div>
-//       </div>
-
-//       {/* Stats Cards */}
-//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-//         {statsCards.map((stat, index) => {
-//           const Icon = stat.icon;
-//           return (
-//             <div key={index} className="bg-white/5 backdrop-blur-xl rounded-[2rem] p-6 border border-white/10 shadow-xl transition-all duration-300">
-//               <div className="flex items-start justify-between">
-//                 <div className={`p-4 rounded-2xl ${stat.bg}`}>
-//                   <Icon className={stat.color} size={28} />
-//                 </div>
-//                 <div className="text-right">
-//                   <p className="text-2xl md:text-3xl font-black text-white tracking-tighter">
-//                     {stat.value}
-//                   </p>
-//                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-//                     {stat.title}
-//                   </p>
-//                 </div>
-//               </div>
-//               <div className="mt-6 flex items-center gap-2">
-//                 <span className="flex items-center text-[11px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-lg">
-//                   <TrendingUp size={14} className="mr-1" />
-//                   {stat.change}
-//                 </span>
-//                 <span className="text-[10px] font-bold text-gray-400">Analysis</span>
-//               </div>
-//             </div>
-//           );
-//         })}
-//       </div>
-
-//       {/* Orders Table */}
-//       <div className="bg-white/5 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 p-4 md:p-8 shadow-2xl overflow-hidden">
-//         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-//           <div>
-//             <h2 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase italic text-blue-400">Recent Transactions</h2>
-//             <p className="text-xs md:text-sm text-gray-500 font-medium font-mono">Live feed of store orders</p>
-//           </div>
-//           <button 
-//             onClick={() => router.push('/admin/orders')}
-//             className="w-fit bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-500/30 active:scale-95"
-//           >
-//             View All Database <span className="ml-1">→</span>
-//           </button>
-//         </div>
-
-//         <div className="overflow-x-auto rounded-xl">
-//           <DataTable data={filteredOrders} columns={columns} />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
 
 "use client";
 
@@ -298,35 +45,133 @@ export default function AdminDashboard() {
     fetchStats();
   }, [isLoggedIn, user, authLoading, router]);
 
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      const res = await API.get('/admin/dashboard');
-      if (res.data?.success) {
-        const s = res.data.stats || {};
-        setData({
-          stats: {
-            totalRevenue: s.totalSales || s.totalRevenue || 0,
-            totalOrders: s.totalOrders || 0,
-            totalCustomers: s.totalCustomers || s.totalUsers || 0,
-            totalProducts: s.totalProducts || 0,
-          },
-          recentOrders: res.data.recentOrders || []
-        });
-      }
-    } catch (err) {
-      console.error("Dashboard error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchStats = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await API.get('/admin/dashboard');
+  //     console.log("Full API Response:", res.data);   // ← এটা খুব জরুরি
 
-  const statsCards = [
-    { title: "Total Revenue", value: `৳${(data.stats.totalRevenue || 0).toLocaleString()}`, change: "+12.5%", icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-500/10", border: "border-emerald-200 dark:border-emerald-500/20" },
-    { title: "Total Orders",   value: (data.stats.totalOrders || 0).toLocaleString(), change: "+8.2%", icon: ShoppingCart, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-500/10", border: "border-blue-200 dark:border-blue-500/20" },
-    { title: "Total Customers",value: (data.stats.totalCustomers || 0).toLocaleString(), change: "+5.1%", icon: Users, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-500/10", border: "border-violet-200 dark:border-violet-500/20" },
-    { title: "Total Products", value: (data.stats.totalProducts || 0).toLocaleString(), change: "-2.4%", icon: Package, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-500/10", border: "border-amber-200 dark:border-amber-500/20" },
-  ];
+  //     if (res.data?.success) {
+  //       const s = res.data.stats || {};
+  //       setData({
+  //         stats: {
+  //           totalRevenue: s.totalSales || s.totalRevenue || 0,
+  //           totalOrders: s.totalOrders || 0,
+  //           totalCustomers: s.totalCustomers || s.totalUsers || 0,
+  //           totalProducts: s.totalProducts || 0,
+  //         },
+  //         recentOrders: res.data.recentOrders || []   // এখানে res.data.recentOrders
+  //       });
+  //     }
+  //   } catch (err) {
+  //     console.error("Dashboard error:", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+//   const fetchStats = async () => {
+//   try {
+//     setLoading(true);
+//     const res = await API.get('/admin/dashboard');
+    
+//     console.log("Full API Response:", res.data);   // ← এটা খুব জরুরি
+    
+//     if (res.data?.success) {
+//       setData({
+//         stats: {
+//           totalRevenue: res.data.stats?.totalSales || res.data.stats?.totalRevenue || 0,
+//           totalOrders: res.data.stats?.totalOrders || 0,
+//           totalCustomers: res.data.stats?.totalCustomers || res.data.stats?.totalUsers || 0,
+//           totalProducts: res.data.stats?.totalProducts || 0,
+//         },
+//         recentOrders: res.data.recentOrders || res.data.data?.recentOrders || [],  // এখানে চেক করো
+//       });
+//     } else {
+//       console.error("API success false:", res.data);
+//     }
+//   } catch (err) {
+//     console.error("Dashboard fetch error:", err);
+//     // এখানে toast বা error state দেখাতে পারো
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+const fetchStats = async () => {
+  try {
+    setLoading(true);
+    const res = await API.get('/admin/dashboard');
+    
+    console.log("✅ Dashboard Response:", JSON.stringify(res.data, null, 2));
+
+    const apiData = res.data || {};
+    
+    setData({
+      // stats: {
+      //   totalRevenue: apiData.stats?.totalSales || apiData.stats?.totalRevenue || 0,
+      //   totalOrders: apiData.stats?.totalOrders || apiData.totalOrders || 0,
+      //   totalCustomers: apiData.stats?.totalCustomers || apiData.totalUsers || 0,
+      //   totalProducts: apiData.stats?.totalProducts || 0,
+      // },
+      stats: {
+        totalRevenue:   apiData.stats?.totalSales   || 0,
+        totalOrders:    apiData.stats?.totalOrders  || 0,
+        totalCustomers: apiData.stats?.totalCustomers || 0,
+        totalProducts:  apiData.stats?.totalProducts || 0,
+      },
+      recentOrders: apiData.recentOrders || apiData.data?.recentOrders || []
+    });
+  } catch (err: any) {
+    console.error("❌ Dashboard Error:", err.response?.data || err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Stats Cards Definition
+const statsCards = [
+  { 
+    title: "Total Revenue", 
+    value: `৳${(data.stats.totalRevenue || 0).toLocaleString()}`, 
+    change: "+12.5%", 
+    icon: DollarSign, 
+    color: "text-emerald-600 dark:text-emerald-400", 
+    bg: "bg-emerald-100 dark:bg-emerald-500/10", 
+    border: "border-emerald-200 dark:border-emerald-500/20",
+    route: "/admin/analytics"          // Revenue/Analysis page
+  },
+  { 
+    title: "Total Orders",   
+    value: (data.stats.totalOrders || 0).toLocaleString(), 
+    change: "+8.2%", 
+    icon: ShoppingCart, 
+    color: "text-blue-600 dark:text-blue-400", 
+    bg: "bg-blue-100 dark:bg-blue-500/10", 
+    border: "border-blue-200 dark:border-blue-500/20",
+    route: "/admin/orders"            // All Orders page
+  },
+  { 
+    title: "Total Customers",
+    value: (data.stats.totalCustomers || 0).toLocaleString(), 
+    change: "+5.1%", 
+    icon: Users, 
+    color: "text-violet-600 dark:text-violet-400", 
+    bg: "bg-violet-100 dark:bg-violet-500/10", 
+    border: "border-violet-200 dark:border-violet-500/20",
+    route: "/admin/customers"         // All Customers page
+  },
+  { 
+    title: "Total Products", 
+    value: (data.stats.totalProducts || 0).toLocaleString(), 
+    change: "-2.4%", 
+    icon: Package, 
+    color: "text-amber-600 dark:text-amber-400", 
+    bg: "bg-amber-100 dark:bg-amber-500/10", 
+    border: "border-amber-200 dark:border-amber-500/20",
+    route: "/admin/products"          // All Products page
+  },
+];
 
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return data.recentOrders || [];
@@ -441,7 +286,7 @@ export default function AdminDashboard() {
         {statsCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div key={i} className={`group bg-white dark:bg-white/5 backdrop-blur-xl border ${stat.border} rounded-3xl p-8 shadow-sm dark:shadow-2xl transition-all hover:scale-[1.02]`}>
+            <div key={i} onClick={() => router.push(stat.route)} className={`group bg-white dark:bg-white/5 backdrop-blur-xl border ${stat.border} rounded-3xl p-8 shadow-sm dark:shadow-2xl transition-all hover:scale-[1.02]`}>
               <div className="flex justify-between items-start">
                 <div className={`p-4 rounded-2xl ${stat.bg}`}>
                   <Icon className={stat.color} size={32} />

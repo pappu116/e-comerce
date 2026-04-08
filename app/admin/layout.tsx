@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import { Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
+import AdminGuard from "./components/AdminGuard";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -25,6 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isDark]);
 
   return (
+    <AdminGuard>
     <div className="flex h-screen overflow-hidden bg-white dark:bg-[#080d17] transition-colors duration-500">
       
       {/* Sidebar */}
@@ -80,5 +81,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </main>
       </div>
     </div>
+    </AdminGuard>
   );
 }
