@@ -326,8 +326,10 @@ const getImageUrl = (path: string | undefined): string => {
   if (!path) return '';
   // যদি ইতিমধ্যে full URL থাকে তাহলে সেটাই রিটার্ন করবে
   if (path.startsWith('http')) return path;
-  // অন্যথায় backend base URL + path (তোমার backend URL অনুসারে পরিবর্তন করো)
-  return `http://localhost:5000/${path.replace(/^\//, '')}`;   // ← এখানে তোমার backend URL দাও
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const backendBaseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+  // অন্যথায় backend base URL + path
+  return `${backendBaseUrl}/${path.replace(/^\//, '')}`;
 };
 
 export default function ProductModal({ isOpen, onClose, product, onSave }: ProductModalProps) {

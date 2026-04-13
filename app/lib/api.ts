@@ -23,9 +23,8 @@
 
 // app/lib/api.ts
 import axios from "axios";
-import { useAuth } from "@/app/store/useAuth"; 
 
-const BASE_URL = "http://localhost:5000"; 
+const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, ""); 
 
 const API = axios.create({
   baseURL: `${BASE_URL}/api`, 
@@ -135,7 +134,7 @@ export const adminService = {
 // ================== 3. Product Service ==================
 export const productService = {
   getAll: async () => {
-    const response = await API.get("/admin/products/all");
+    const response = await API.get("/products");
     return response.data; 
   },
   getById: async (id: string) => {
