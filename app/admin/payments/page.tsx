@@ -247,7 +247,7 @@ import {
   FileText, Download, X, FileJson, BarChart3, 
   ShieldAlert, ArrowRight 
 } from 'lucide-react';
-import API from '@/app/lib/api';
+import API from '@/app/lib/apiClient';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';

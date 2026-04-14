@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 import { Input } from "@/components/ui/input"; 
 import DataTable from './components/DataTable';
-import API from '@/app/lib/api'; 
-import { useAuth } from "@/app/store/useAuth";
+import API from '@/app/lib/apiClient'; 
+import { useAuth } from "@/app/store/authStore";
 
 export default function AdminDashboard() {
   const router = useRouter();

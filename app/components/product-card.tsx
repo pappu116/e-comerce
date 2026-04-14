@@ -24,7 +24,7 @@
 import Link from "next/link";
 import { Heart, Plus } from "lucide-react";
 import { motion } from "framer-motion";
-import { useWishlist } from "@/app/store/useWishlist";
+import { useWishlist } from "@/app/store/wishlistStore";
 
 export default function ProductCard({ product }: { product: any }) {
   const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
@@ -38,12 +38,12 @@ export default function ProductCard({ product }: { product: any }) {
   const productId = product._id || product.id;
   const isFavorite = wishlist.some((item) => (item._id || item.id) === productId);
 
-  const toggleWishlist = (e: React.MouseEvent) => {
+  const toggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (isFavorite) {
-      removeFromWishlist(productId);
+      await removeFromWishlist(productId);
     } else {
-      addToWishlist(product);
+      await addToWishlist(product);
     }
   };
 

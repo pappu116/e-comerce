@@ -121,14 +121,15 @@
 
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
-import API from "@/app/lib/api";
+import API, { authService } from "@/app/lib/apiClient";
 
 // ইউজারের ডাটা টাইপ
 interface User {
   _id?: string;
+  id?: string;
   name: string;
   email: string;
-  role: "admin" | "user";
+  role: "admin" | "user" | "customer";
 }
 
 // অথেনটিকেশন স্টেটের টাইপ
@@ -138,8 +139,14 @@ interface AuthState {
   loading: boolean;
   isHydrated: boolean; // ডাটা রিস্টোর হয়েছে কি না চেক করতে
   error: string | null;
+  register: (payload: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+  }) => Promise<{ success: boolean; message?: string }>;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   setHydrated: () => void;
 }
@@ -158,13 +165,37 @@ export const useAuth = create<AuthState>()(
         // Hydration সম্পন্ন হলে এটি কল হবে
         setHydrated: () => set({ isHydrated: true }),
 
+        register: async (payload) => {
+          set({ loading: true, error: null });
+          try {
+            const data = await authService.register(payload);
+            if (data?.success && data?.token) {
+              localStorage.setItem("token", data.token);
+              set({
+                user: data.user,
+                isLoggedIn: true,
+                loading: false,
+                error: null,
+              });
+              return { success: true };
+            }
+
+            const failMsg = data?.message || "Registration failed";
+            set({ loading: false, error: failMsg });
+            return { success: false, message: failMsg };
+          } catch (err: any) {
+            const errorMsg = err?.response?.data?.message || err?.message || "Registration failed";
+            set({ loading: false, error: errorMsg });
+            return { success: false, message: errorMsg };
+          }
+        },
+
         // --- লগইন ফাংশন ---
         login: async (email, password) => {
           set({ loading: true, error: null });
 
           try {
-            const response = await API.post("/auth/login", { email, password });
-            const { token, user, success, message } = response.data;
+            const { token, user, success, message } = await authService.login({ email, password });
 
             if (success && token) {
               // লোকাল স্টোরেজে টোকেন রাখা
@@ -198,7 +229,7 @@ export const useAuth = create<AuthState>()(
 
           try {
             // Backend logout call
-            await API.post("/auth/logout");
+            await authService.logout();
             console.log("✅ Backend logout successful");
           } catch (err) {
             console.warn("⚠️ Backend logout failed, clearing local state anyway", err);
@@ -224,13 +255,8 @@ export const useAuth = create<AuthState>()(
           }
 
           try {
-            const response = await API.get("/auth/me", {
-              headers: {
-                Authorization: `Bearer ${token}`
-              }
-            });
-
-            const userData = response.data.user || response.data;
+            const response = await authService.getMe();
+            const userData = response.user || response;
 
             set({ 
               user: userData, 

@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, LayoutDashboard, Package, Heart, MapPin, Bell, ShieldCheck, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from "@/app/store/useAuth";
+import { useAuth } from "@/app/store/authStore";
 
 import QuickStar from "./quick-stats";
 import DashboardOverview from "./DashboardOverview";
@@ -29,21 +29,22 @@ export default function ProfilePage() {
   }, [checkAuth]);
 
   useEffect(() => {
-    // যদি এখনো loading চলছে তাহলে অপেক্ষা করো
     if (authLoading) return;
+
+    if (!isLoggedIn || !user) {
+      setIsChecking(false);
+      router.replace("/login?redirect=/profile");
+      return;
+    }
 
     if (isLoggedIn && user) {
       setIsChecking(false);
 
-      // অ্যাডমিন হলে অ্যাডমিনে পাঠাও
       if (user.role === "admin") {
         router.replace("/admin");
       }
-    } 
-    else if (!isLoggedIn && !isChecking && !authLoading) {
-      router.replace("/login?redirect=/profile");
     }
-  }, [isLoggedIn, user, authLoading, router, isChecking]);
+  }, [isLoggedIn, user, authLoading, router]);
 
   if (isChecking || authLoading || !isLoggedIn || !user) {
     return (
@@ -92,7 +93,10 @@ export default function ProfilePage() {
             <p className="text-slate-400 mt-1">{user.email}</p>
 
             <button
-              onClick={() => { logout(); router.push("/login"); }}
+              onClick={async () => {
+                await logout();
+                router.push("/login");
+              }}
               className="mt-8 w-full py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-semibold transition-all flex items-center justify-center gap-2"
             >
               <LogOut size={18} /> Logout

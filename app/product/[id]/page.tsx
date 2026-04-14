@@ -1,28 +1,23 @@
-import { productService, getImageUrl } from "@/app/lib/api";
+import { productService, getImageUrl } from "@/app/lib/apiClient";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import AddToCartButton from "@/app/components/AddToCartButton";
+import ReviewsPanel from "./ReviewsPanel";
 
 export default async function ProductPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = await params;
+  const { id } = params;
 
   if (!id || id === "undefined") notFound();
 
-  // ১. এপিআই থেকে রেসপন্স নেওয়া
   const response = await productService.getById(id);
-  console.log("API Response:", response);
-
-  // ২. আপনার কনসোল অনুযায়ী ডাটা 'response.product' এর ভেতর আছে
   const product = response?.product;
 
-  // যদি প্রোডাক্ট না পাওয়া যায়
   if (!product) notFound();
 
-  // ৩. ইমেজের ইউআরএল ঠিক করা
   const imageUrl = getImageUrl(product.images?.[0]);
 
   return (
@@ -72,12 +67,17 @@ export default async function ProductPage({
               {product.description}
             </p>
             <div className="pt-4">
-              {/* ডাটাবেসের পুরো অবজেক্টটি বাটনে পাঠানো হচ্ছে */}
               <AddToCartButton product={product} />
             </div>
           </div>
 
         </div>
+
+        <ReviewsPanel
+          productId={id}
+          initialRating={Number(product.ratings || 0)}
+          initialCount={Number(product.numOfReviews || 0)}
+        />
       </div>
     </div>
   );

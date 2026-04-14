@@ -199,8 +199,8 @@ import {
   TrendingUp, Users, ShoppingBag, DollarSign, 
   ArrowDownRight, Download, Zap, UserPlus, Loader2
 } from 'lucide-react';
-import API from '@/app/lib/api'; 
-import { useAuth } from "@/app/store/useAuth";
+import API from '@/app/lib/apiClient'; 
+import { useAuth } from "@/app/store/authStore";
 
 export default function AnalyticsPage() {
   const router = useRouter();

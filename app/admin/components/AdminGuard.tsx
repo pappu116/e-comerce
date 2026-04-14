@@ -1,6 +1,6 @@
 // @/components/admin/AdminGuard.tsx
 "use client";
-import { useAuth } from "@/app/store/useAuth";
+import { useAuth } from "@/app/store/authStore";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 

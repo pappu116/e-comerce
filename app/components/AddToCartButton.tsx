@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useCart } from "@/app/store/useCart";
+import { useCart } from "@/app/store/cartStore";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, CheckCircle2 } from "lucide-react"; 
 import { useState } from "react";
@@ -12,9 +12,9 @@ export default function AddToCartButton({ product }: { product: any }) {
   const router = useRouter();
   const [isAdded, setIsAdded] = useState(false);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     setIsAdded(true);
-    addToCart(product);
+    await addToCart(product);
     
     // ১ সেকেন্ড পর কার্ট পেজে নিয়ে যাবে, যাতে ইউজার 'Success' এনিমেশনটি দেখতে পায়
     setTimeout(() => {

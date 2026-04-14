@@ -5,19 +5,28 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShoppingCart, User, LogOut, Menu, X } from "lucide-react"; 
 import { ThemeToggle } from "./theme-toggle";
-import { useCart } from "@/app/store/useCart";
-import { useAuth } from "@/app/store/useAuth";
+import { useCart } from "@/app/store/cartStore";
+import { useAuth } from "@/app/store/authStore";
 import { motion, AnimatePresence } from "framer-motion";
+import { useWishlist } from "@/app/store/wishlistStore";
 
 export default function Navbar() {
   const cartItemsCount = useCart((state) => state.items.length);
+  const hydrateCart = useCart((state) => state.hydrateCart);
   const { isLoggedIn, user, logout } = useAuth(); 
+  const hydrateWishlist = useWishlist((state) => state.hydrateWishlist);
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    hydrateCart();
+    hydrateWishlist();
+  }, [isLoggedIn, hydrateCart, hydrateWishlist]);
 
   return (
     <nav className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-[100] transition-all">

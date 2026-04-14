@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import API from '@/app/lib/api';
+import API from '@/app/lib/apiClient';
 import { toast } from "sonner";
 
 import AddMemberModal from '../components/AddMemberModal';

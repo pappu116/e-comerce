@@ -1,15 +1,8 @@
 
 
-import { redirect } from "next/navigation";
-
-export default function PaymentRedirectPage() {
-  redirect("/checkout");
-}
-
-/*
 "use client"
 
-import { useCart } from "@/app/store/useCart";
+import { useCart } from "@/app/store/cartStore";
 import { CreditCard, ArrowLeft, ShieldCheck, CheckCircle2, Lock, Smartphone, Calendar } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -187,7 +180,7 @@ export default function PaymentPage() {
           </div>
           
           <div className="space-y-4">
-            {/* --- কার্ড পেমেন্ট সেকশন --- * /}
+            {/* --- কার্ড পেমেন্ট সেকশন --- */}
             <div 
               onClick={() => { setPaymentMethod('card'); setSelectedProvider(null); setShowOtp(false); }}
               className={`p-6 border-2 rounded-[2.5rem] flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'card' ? "border-indigo-600 bg-indigo-50/30 dark:bg-indigo-500/5 shadow-xl shadow-indigo-500/5" : "border-zinc-100 dark:border-zinc-800"}`}
@@ -204,7 +197,7 @@ export default function PaymentPage() {
               <div className={`w-6 h-6 rounded-full border-4 ${paymentMethod === 'card' ? 'border-indigo-600 bg-white' : 'border-zinc-300'}`}></div>
             </div>
 
-            {/* কার্ড ইনপুট বক্স (শুধুমাত্র কার্ড সিলেক্ট করলে দেখাবে) * /}
+            {/* কার্ড ইনপুট বক্স (শুধুমাত্র কার্ড সিলেক্ট করলে দেখাবে) */}
             {paymentMethod === 'card' && (
               <div className="p-8 bg-zinc-50 dark:bg-zinc-900/50 rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 space-y-4 animate-in slide-in-from-top-4 duration-300">
                 <div className="space-y-2">
@@ -221,7 +214,7 @@ export default function PaymentPage() {
               </div>
             )}
 
-            {/* --- মোবাইল ব্যাংকিং সেকশন --- * /}
+            {/* --- মোবাইল ব্যাংকিং সেকশন --- */}
             <div 
               onClick={() => { setPaymentMethod('mobile'); setShowOtp(false); }}
               className={`p-6 border-2 rounded-[2.5rem] flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'mobile' ? "border-zinc-900 dark:border-white bg-zinc-50 dark:bg-zinc-900/30 shadow-xl" : "border-zinc-100 dark:border-zinc-800"}`}
@@ -238,7 +231,7 @@ export default function PaymentPage() {
               <div className={`w-6 h-6 rounded-full border-4 ${paymentMethod === 'mobile' ? 'border-zinc-900 dark:border-white bg-white' : 'border-zinc-300'}`}></div>
             </div>
 
-            {/* প্রোভাইডার লোগো এবং ওটিপি লজিক * /}
+            {/* প্রোভাইডার লোগো এবং ওটিপি লজিক */}
             {paymentMethod === 'mobile' && (
               <div className="space-y-4">
                 {!showOtp && (
@@ -299,7 +292,7 @@ export default function PaymentPage() {
           </div>
         </div>
 
-        {/* --- ডান পাশ: সামারি এবং বাটন --- * /}
+        {/* --- ডান পাশ: সামারি এবং বাটন --- */}
         <div className="lg:sticky lg:top-24">
           <div className="p-10 rounded-[3rem] bg-zinc-900 dark:bg-white text-white dark:text-black shadow-2xl relative overflow-hidden">
             <h2 className="text-xl font-black mb-8 border-b border-white/10 dark:border-black/10 pb-4 tracking-widest italic uppercase">Order Review</h2>
@@ -338,4 +331,3 @@ export default function PaymentPage() {
     </div>
   );
 }
-*/

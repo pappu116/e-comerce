@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { X, Save, ShieldCheck, Loader2, Clock, DollarSign } from 'lucide-react';
-import API from '@/app/lib/api';
+import API from '@/app/lib/apiClient';
 import { toast } from 'sonner';
 
 interface Customer {

@@ -5,12 +5,21 @@ import { Heart, ShoppingBag, Trash2, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useWishlist } from "@/app/store/useWishlist"; 
-import { useCart } from "@/app/store/useCart";
+import { useWishlist } from "@/app/store/wishlistStore"; 
+import { useCart } from "@/app/store/cartStore";
+import { useEffect } from "react";
+import { useAuth } from "@/app/store/authStore";
 
 export default function WishlistSection() {
-  const { wishlist, removeFromWishlist } = useWishlist();
+  const { wishlist, removeFromWishlist, hydrateWishlist } = useWishlist();
   const { addToCart } = useCart() as any;
+  const { isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      hydrateWishlist();
+    }
+  }, [isLoggedIn, hydrateWishlist]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 px-2 sm:px-0">

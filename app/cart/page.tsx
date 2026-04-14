@@ -2,8 +2,8 @@
 
 "use client"
 
-import { useCart } from "@/app/store/useCart";
-import { useAuth } from "@/app/store/useAuth";
+import { useCart } from "@/app/store/cartStore";
+import { useAuth } from "@/app/store/authStore";
 import Link from "next/link";
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -17,13 +17,14 @@ export default function CartPage() {
 
   const handleCheckout = () => {
     if (isLoggedIn) {
-      router.push("/payment"); 
+      router.push("/checkout"); 
     } else {
       router.push("/login?redirect=/cart"); 
     }
   };
 
   const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0);
+  const getItemId = (item: any) => item?._id || item?.id;
   const baseShipping = 120;
   let shippingCharge = baseShipping;
 
@@ -67,11 +68,11 @@ export default function CartPage() {
           <div className="lg:col-span-8 space-y-6">
             {items.map((item: any) => (
               <div 
-                key={item.id} 
+                key={getItemId(item)} 
                 className="flex flex-col sm:flex-row gap-6 p-6 rounded-[2rem] bg-slate-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-white/5 shadow-sm"
               >
                 <div className="w-full sm:w-32 h-32 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border dark:border-white/10">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  <img src={item.image || item.images?.[0] || "/no-image.png"} alt={item.name} className="w-full h-full object-cover" />
                 </div>
 
                 <div className="flex-1 flex flex-col justify-between">
@@ -85,16 +86,16 @@ export default function CartPage() {
 
                   <div className="flex justify-between items-center mt-6">
                     <div className="flex items-center gap-4 bg-white dark:bg-zinc-800 px-4 py-2 rounded-full border border-zinc-200 dark:border-white/10">
-                      <button onClick={() => decrease(item.id)} className="text-zinc-500 hover:text-indigo-600 transition-colors">
+                      <button onClick={() => decrease(getItemId(item))} className="text-zinc-500 hover:text-indigo-600 transition-colors">
                         <Minus size={16} />
                       </button>
                       <span className="font-bold w-4 text-center text-zinc-900 dark:text-white">{item.quantity}</span>
-                      <button onClick={() => increase(item.id)} className="text-zinc-500 hover:text-indigo-600 transition-colors">
+                      <button onClick={() => increase(getItemId(item))} className="text-zinc-500 hover:text-indigo-600 transition-colors">
                         <Plus size={16} />
                       </button>
                     </div>
                     
-                    <button onClick={() => removeFromCart(item.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 p-2 rounded-full transition-colors">
+                    <button onClick={() => removeFromCart(getItemId(item))} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 p-2 rounded-full transition-colors">
                       <Trash2 size={20} />
                     </button>
                   </div>

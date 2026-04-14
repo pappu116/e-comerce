@@ -3,6 +3,12 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 
+const SPARKS = Array.from({ length: 5 }, (_, i) => ({
+  id: i,
+  duration: 0.5 + i * 0.12,
+  delay: i * 0.08,
+}));
+
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white overflow-hidden p-6 text-center">
@@ -21,9 +27,9 @@ export default function NotFound() {
         </motion.div>
 
         {/* Chire jawa Tar (Electrical Sparks) */}
-        {[...Array(5)].map((_, i) => (
+        {SPARKS.map((spark, i) => (
           <motion.div
-            key={i}
+            key={spark.id}
             initial={{ opacity: 0 }}
             animate={{
               opacity: [0, 1, 0],
@@ -34,8 +40,8 @@ export default function NotFound() {
             }}
             transition={{
               repeat: Infinity,
-              duration: 0.5 + Math.random(),
-              delay: Math.random(),
+              duration: spark.duration,
+              delay: spark.delay,
             }}
             className="absolute top-1/2 left-1/2 w-1 bg-yellow-400 rounded-full shadow-[0_0_10px_#fbbf24]"
           />

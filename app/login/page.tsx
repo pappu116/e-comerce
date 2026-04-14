@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/app/store/useAuth";
+import { useAuth } from "@/app/store/authStore";
 
 // ================== InputField Component ==================
 const InputField = ({ type, placeholder, value, onChange }: any) => (
@@ -28,6 +28,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const loginAction = useAuth((state: any) => state.login);
+  const redirectTo = searchParams.get("redirect");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,10 +55,9 @@ const handleSubmit = async (e: React.FormEvent) => {
         return;
       }
 
-      console.log("✅ Login successful - Role:", currentUser.role);
-
-      const redirectPath = currentUser.role === "admin" ? "/admin" : "/profile";
-
+      const redirectPath =
+        redirectTo ||
+        (currentUser.role === "admin" ? "/admin" : "/profile");
       router.replace(redirectPath);   // replace ব্যবহার করা হয়েছে
     } else {
       setError(result.message || "Login failed");

@@ -5,7 +5,7 @@ import {
   Plus, X, User, Mail, Lock, Phone,
   Loader2, Sparkles, ArrowRight, Check, AlertCircle
 } from "lucide-react";
-import API from '@/app/lib/api';
+import API from '@/app/lib/apiClient';
 import { toast } from "sonner";
 
 interface NewUserForm {

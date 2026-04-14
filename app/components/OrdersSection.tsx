@@ -1,265 +1,305 @@
 "use client";
-import { useState } from "react";
-import Link from 'next/link';
-import { 
-  Package, Truck, FileText, CheckCircle2, Clock, 
-  X, MapPin, RefreshCcw, Send, ChevronDown, 
-  ShoppingBag, ArrowRight
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
+import { useEffect, useMemo, useState } from "react";
+import { Package, Truck, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { orderService } from "@/app/lib/apiClient";
+import { useAuth } from "@/app/store/authStore";
 
+const statusClass: Record<string, string> = {
+  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  processing: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  shipped: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+  delivered: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  cancelled: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+  refunded: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+};
 
 export default function OrdersSection() {
-  const [orderList] = useState([
-    { 
-      id: "10241", 
-      date: "28 Mar, 2026", 
-      status: "In Transit", 
-      total: 1250, 
-      address: "House #12, Road #04, Sector #09, Uttara, Dhaka",
-      payment: "Cash on Delivery",
-      items: [{ name: "Premium Oversized Hoodie", price: 1250, qty: 1, size: "XL" }]
-    },
-    { 
-      id: "10238", 
-      date: "20 Mar, 2026", 
-      status: "Delivered", 
-      total: 850, 
-      address: "Mirpur 10, Block C, Dhaka",
-      payment: "Paid (bKash)",
-      items: [{ name: "Luxury Quartz Watch", price: 850, qty: 1, size: "OS" }] 
+  const { isLoggedIn } = useAuth();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [tracking, setTracking] = useState<any>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+
+  const totalSpent = useMemo(
+    () =>
+      orders.reduce(
+        (sum, order) => sum + Number(order?.totalAmount || order?.subTotal || 0),
+        0
+      ),
+    [orders]
+  );
+
+  const activeShipment = useMemo(
+    () =>
+      orders.find((order) => ["pending", "processing", "shipped"].includes(order?.status)) ||
+      null,
+    [orders]
+  );
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!isLoggedIn) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+      try {
+        const response = await orderService.getMyOrders();
+        setOrders(Array.isArray(response?.orders) ? response.orders : []);
+      } catch (err: any) {
+        setError(err?.response?.data?.message || "Failed to load order history");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [isLoggedIn]);
+
+  const openTracking = async (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setTracking(null);
+    setTrackingLoading(true);
+    try {
+      const response = await orderService.getTracking(orderId);
+      setTracking(response?.tracking || null);
+    } catch (err: any) {
+      setTracking({ error: err?.response?.data?.message || "Tracking unavailable" });
+    } finally {
+      setTrackingLoading(false);
     }
-  ]);
-
-  const [selectedOrder, setSelectedOrder] = useState<null | any>(null);
-  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
-  const [returnOrder, setReturnOrder] = useState<null | any>(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [returnReason, setReturnReason] = useState("Wrong Size");
-  const reasons = ["Wrong Size", "Product Damage", "Quality Issues", "Not as described"];
-
-  // ১. ইনভয়েস ডাউনলোড ফাংশন
-  const handleDownloadInvoice = (orderId: string) => {
-    alert(`Downloading Invoice for Order #PREM-${orderId}...`);
   };
 
-  // ২. রিটার্ন সাবমিট ফাংশন (যেটি মিসিং ছিল)
-  const handleReturnSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`Return request submitted for Order #PREM-${returnOrder?.id || 'N/A'}`);
-    setIsReturnModalOpen(false);
-    setIsDropdownOpen(false);
+  const closeTracking = () => {
+    setSelectedOrderId(null);
+    setTracking(null);
+  };
+
+  const cancelOrder = async (orderId: string) => {
+    try {
+      const response = await orderService.cancel(orderId);
+      if (response?.success) {
+        setOrders((prev) =>
+          prev.map((item) =>
+            item._id === orderId ? { ...item, status: "cancelled" } : item
+          )
+        );
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Failed to cancel order");
+    }
   };
 
   return (
-    <div className="space-y-8 md:space-y-10 px-2 sm:px-0">
-      
-      {/* Quick Status Preview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-        <div className="p-6 md:p-8 bg-indigo-500/10 border border-indigo-500/20 rounded-[2rem] md:rounded-[2.5rem] relative overflow-hidden group">
-            <Package className="absolute -right-4 -bottom-4 text-indigo-500/10 group-hover:scale-110 transition-transform duration-700" size={100} />
-            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-2">Current Shipment</p>
-            <h4 className="text-xl md:text-2xl font-black text-white italic">#PREM-10241</h4>
+    <div className="space-y-8 px-2 sm:px-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-[2rem]">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-2">
+            Current Shipment
+          </p>
+          <h4 className="text-2xl font-black text-white">
+            {activeShipment ? `#${String(activeShipment._id).slice(-8).toUpperCase()}` : "N/A"}
+          </h4>
         </div>
-        
-        <div className="p-6 md:p-8 bg-white/5 border border-white/10 rounded-[2rem] md:rounded-[2.5rem] flex flex-row sm:flex-col justify-between sm:justify-center items-center text-center">
-            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:mb-2">Total Orders</p>
-            <h4 className="text-2xl md:text-3xl font-black text-white">{orderList.length}</h4>
+        <div className="p-6 bg-white/5 border border-white/10 rounded-[2rem]">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
+            Total Orders
+          </p>
+          <h4 className="text-3xl font-black text-white">{orders.length}</h4>
         </div>
-
-        <div className="p-6 md:p-8 bg-white/5 border border-white/10 rounded-[2rem] md:rounded-[2.5rem] flex flex-row sm:flex-col justify-between sm:justify-center items-center text-center sm:col-span-2 md:col-span-1">
-            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 sm:mb-2">Total Spent</p>
-            <h4 className="text-2xl md:text-3xl font-black text-indigo-400 leading-none">৳2,100</h4>
+        <div className="p-6 bg-white/5 border border-white/10 rounded-[2rem]">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
+            Total Spent
+          </p>
+          <h4 className="text-3xl font-black text-indigo-400">৳{totalSpent.toLocaleString()}</h4>
         </div>
       </div>
 
       <div className="flex items-center justify-between px-2">
-        <h3 className="text-2xl md:text-3xl font-black tracking-tight text-white uppercase italic">Purchase History</h3>
+        <h3 className="text-2xl md:text-3xl font-black tracking-tight text-white uppercase italic">
+          Purchase History
+        </h3>
         <div className="h-px flex-1 bg-white/5 mx-6 hidden sm:block" />
       </div>
 
-      <div className="space-y-6">
-        {orderList.map((order) => (
-          <motion.div 
-            key={order.id} 
-            whileHover={{ y: -5 }}
-            className="p-6 md:p-8 bg-white/[0.03] border border-white/10 rounded-[2.5rem] md:rounded-[3rem] group hover:bg-white/[0.07] transition-all relative overflow-hidden"
-          >
-            <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
-              <div className="flex gap-4 items-center">
-                  <div className="p-3 md:p-4 bg-white/5 rounded-2xl text-indigo-500 border border-white/5 shadow-inner">
-                    <ShoppingBag size={24} />
+      {loading ? (
+        <div className="p-10 rounded-3xl border border-white/10 bg-white/[0.03] text-center text-slate-400 font-bold">
+          Loading orders...
+        </div>
+      ) : error ? (
+        <div className="p-10 rounded-3xl border border-rose-500/20 bg-rose-500/10 text-center text-rose-400 font-bold">
+          {error}
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="p-10 rounded-3xl border border-white/10 bg-white/[0.03] text-center text-slate-400 font-bold">
+          No orders found yet.
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {orders.map((order) => (
+            <motion.div
+              key={order._id}
+              whileHover={{ y: -3 }}
+              className="p-6 bg-white/[0.03] border border-white/10 rounded-[2rem]"
+            >
+              <div className="flex flex-col md:flex-row justify-between items-start gap-5 mb-6">
+                <div className="flex gap-4 items-center">
+                  <div className="p-3 bg-white/5 rounded-2xl text-indigo-500 border border-white/5">
+                    <Package size={22} />
                   </div>
                   <div>
-                      <h4 className="font-black text-lg md:text-xl text-slate-100 uppercase italic">Order #PREM-{order.id}</h4>
-                      <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest mt-0.5">Placed on {order.date}</p>
+                    <h4 className="font-black text-lg text-slate-100 uppercase italic">
+                      Order #{String(order._id).slice(-8).toUpperCase()}
+                    </h4>
+                    <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest mt-0.5">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
-              </div>
-              <span className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-2 self-start md:self-center ${order.status === 'Delivered' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
-                {order.status === 'Delivered' ? <CheckCircle2 size={12} /> : <Clock size={12} />} {order.status}
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-white/5 gap-6">
-              <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3">
-                <button 
-                  onClick={() => setSelectedOrder(order)} 
-                  className="w-full sm:w-auto px-8 py-4 bg-indigo-600 rounded-xl md:rounded-2xl text-[10px] font-black text-white hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2 uppercase tracking-widest"
+                </div>
+                <span
+                  className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border ${
+                    statusClass[order.status] || "bg-slate-500/10 text-slate-300 border-slate-500/20"
+                  }`}
                 >
-                  <Truck size={14} /> Track Order
-                </button>
-                {order.status === "Delivered" && (
-                  <button 
-                    onClick={() => { setReturnOrder(order); setIsReturnModalOpen(true); }} 
-                    className="w-full sm:w-auto px-6 py-4 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl text-[10px] font-black text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
+                  {order.status}
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-5 border-t border-white/5">
+                <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+                  <button
+                    onClick={() => openTracking(order._id)}
+                    className="px-6 py-3 bg-indigo-600 rounded-xl text-[10px] font-black text-white hover:bg-indigo-500 uppercase tracking-widest flex items-center gap-2"
                   >
-                     <RefreshCcw size={14} /> Return
+                    <Truck size={14} /> Track
                   </button>
-                )}
+                  {["pending", "processing"].includes(order.status) ? (
+                    <button
+                      onClick={() => cancelOrder(order._id)}
+                      className="px-6 py-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] font-black text-rose-300 hover:bg-rose-500/20 uppercase tracking-widest"
+                    >
+                      Cancel
+                    </button>
+                  ) : null}
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">
+                    Total
+                  </p>
+                  <p className="text-2xl font-black text-white">
+                    ৳{Number(order.totalAmount || order.subTotal || 0).toLocaleString()}
+                  </p>
+                </div>
               </div>
-              <div className="w-full sm:w-auto text-center sm:text-right border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0">
-                  <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Total Paid</p>
-                  <p className="text-2xl md:text-3xl font-black text-white leading-none">৳{order.total}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
-      {/* TRACKING MODAL */}
       <AnimatePresence>
-        {selectedOrder && (
+        {selectedOrderId ? (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedOrder(null)} className="absolute inset-0 bg-black/90 backdrop-blur-xl" />
-            <motion.div 
-              initial={{ scale: 0.95, y: 30 }} 
-              animate={{ scale: 1, y: 0 }} 
-              exit={{ scale: 0.95, y: 30 }} 
-              className="bg-[#0f172a] border border-white/10 w-full max-w-2xl rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-12 relative z-10 shadow-2xl overflow-y-auto max-h-[95vh] scrollbar-hide"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeTracking}
+              className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+            />
+            <motion.div
+              initial={{ scale: 0.95, y: 24 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 24 }}
+              className="bg-[#0f172a] border border-white/10 w-full max-w-2xl rounded-[2rem] p-6 relative z-10"
             >
-              <div className="flex justify-between items-start mb-8 md:mb-10">
+              <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h4 className="text-2xl md:text-3xl font-black leading-tight text-white uppercase italic">Shipment Status</h4>
-                  <p className="text-indigo-400 font-black text-[10px] md:text-xs tracking-widest uppercase mt-1">Ref: #PREM-{selectedOrder.id}</p>
+                  <h4 className="text-2xl font-black text-white uppercase italic">Order Tracking</h4>
+                  <p className="text-indigo-400 font-black text-xs tracking-widest uppercase mt-1">
+                    Ref #{String(selectedOrderId).slice(-8).toUpperCase()}
+                  </p>
                 </div>
-                <button onClick={() => setSelectedOrder(null)} className="p-2 md:p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-slate-400"><X size={20} /></button>
+                <button onClick={closeTracking} className="p-2 bg-white/5 rounded-full text-slate-400">
+                  <X size={20} />
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
-                <div className="space-y-8 relative ml-2 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
-                  <div className="flex gap-6 items-start relative">
-                    <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center border-4 border-[#0f172a] z-10 shrink-0"><CheckCircle2 size={10} className="text-white" /></div>
-                    <div className="flex-1"><p className="font-black text-slate-100 text-xs md:text-sm uppercase tracking-tight">Order Confirmed</p><p className="text-[10px] text-slate-500 mt-1 uppercase font-bold">{selectedOrder.date}</p></div>
+              {trackingLoading ? (
+                <div className="p-6 text-center text-slate-400 font-bold">Loading tracking details...</div>
+              ) : tracking?.error ? (
+                <div className="p-6 text-center text-rose-400 font-bold">{tracking.error}</div>
+              ) : tracking ? (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Status</p>
+                      <p className="font-black text-white uppercase">{tracking.status}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">
+                        Tracking No
+                      </p>
+                      <p className="font-black text-white">{tracking.trackingNumber || "Not Assigned"}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">
+                        Delivery
+                      </p>
+                      <p className="font-black text-white">
+                        {tracking.deliveryDate
+                          ? new Date(tracking.deliveryDate).toLocaleDateString()
+                          : "Pending"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex gap-6 items-start relative">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f172a] z-10 shrink-0 ${selectedOrder.status !== 'Delivered' ? 'bg-indigo-600 animate-pulse' : 'bg-indigo-600'}`}><Truck size={10} className="text-white" /></div>
-                    <div className="flex-1"><p className="font-black text-slate-100 text-xs md:text-sm uppercase tracking-tight">In Transit</p><p className="text-[10px] text-slate-500 mt-1 uppercase font-bold">Package out for delivery</p></div>
-                  </div>
-                  <div className={`flex gap-6 items-start relative ${selectedOrder.status !== 'Delivered' ? 'opacity-20' : ''}`}>
-                    <div className={`w-6 h-6 rounded-full border-4 border-[#0f172a] z-10 shrink-0 ${selectedOrder.status === 'Delivered' ? 'bg-indigo-600' : 'bg-slate-800'}`}></div>
-                    <div className="flex-1"><p className="font-black text-slate-100 text-xs md:text-sm uppercase tracking-tight">Delivered</p></div>
-                  </div>
-                </div>
 
-                <div className="space-y-5 bg-white/5 border border-white/5 rounded-[2rem] p-5 md:p-6 text-white">
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Shipping Destination</p>
-                    <p className="text-xs md:text-sm text-slate-300 font-bold leading-relaxed">{selectedOrder.address}</p>
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2">
+                      Shipping Address
+                    </p>
+                    <p className="text-sm text-slate-200">
+                      {tracking.shippingAddress?.addressLine1}, {tracking.shippingAddress?.area},{" "}
+                      {tracking.shippingAddress?.city}
+                    </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Payment</p><p className="text-xs md:text-sm text-slate-100 font-black">{selectedOrder.payment}</p></div>
-                    <div><p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Estimated</p><p className="text-xs md:text-sm text-green-500 font-black uppercase">Next 24 Hours</p></div>
-                  </div>
-                  <hr className="border-white/5" />
+
                   <div className="space-y-3">
-                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Item Summary</p>
-                    {selectedOrder.items.map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-                        <span className="text-[11px] font-bold text-slate-300">{item.name} <span className="text-indigo-500 ml-1">x{item.qty}</span></span>
-                        <span className="text-[11px] font-black text-white">৳{item.price}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-10 flex flex-col sm:flex-row gap-3">
-                <button onClick={() => handleDownloadInvoice(selectedOrder.id)} className="flex-1 py-4 md:py-5 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl text-[10px] font-black hover:bg-white/10 text-white flex items-center justify-center gap-2 uppercase tracking-[0.2em] transition-all">
-                  <FileText size={16} /> Invoice
-                </button>
-                <Link href="/Contact" className="flex-1">
-                <button className="w-full py-4 md:py-5 bg-indigo-600 rounded-xl md:rounded-2xl text-[10px] font-black text-white hover:bg-indigo-500 uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-2 transition-all">
-                  <Send size={16} /> Help Center
-                </button>
-              </Link>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* RETURN MODAL */}
-      <AnimatePresence>
-        {isReturnModalOpen && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsReturnModalOpen(false)} className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }} 
-              animate={{ scale: 1, y: 0 }} 
-              exit={{ scale: 0.9, y: 20 }} 
-              className="bg-[#0f172a] border border-white/10 w-full max-w-lg rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-10 relative z-20 text-white"
-            >
-              <div className="flex justify-between items-center mb-8">
-                <h4 className="text-xl md:text-2xl font-black uppercase italic tracking-tight">Return Gateway</h4>
-                <button onClick={() => setIsReturnModalOpen(false)} className="p-2 bg-white/5 rounded-full"><X size={20} /></button>
-              </div>
-
-              {/* সংশোধিত ফর্ম */}
-              <form onSubmit={handleReturnSubmit} className="space-y-5">
-                <div className="relative">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-3 px-1">Reason for request</label>
-                  <div 
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
-                    className="w-full bg-white/5 border border-white/10 p-4 md:p-5 rounded-xl md:rounded-2xl text-white flex justify-between items-center cursor-pointer hover:bg-white/[0.08] transition-all"
-                  >
-                    <span className="font-bold text-xs md:text-sm">{returnReason}</span>
-                    <ChevronDown className={`text-slate-500 transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`} size={18} />
-                  </div>
-                  
-                  <AnimatePresence>
-                    {isDropdownOpen && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} 
-                        className="absolute z-50 w-full mt-2 bg-[#1e293b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
-                      >
-                        {reasons.map((reason) => (
-                          <div 
-                            key={reason} 
-                            onClick={() => { setReturnReason(reason); setIsDropdownOpen(false); }} 
-                            className="p-4 text-xs font-bold text-slate-300 hover:bg-indigo-600 hover:text-white cursor-pointer transition-colors border-b border-white/5 last:border-none"
-                          >
-                            {reason}
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Timeline</p>
+                    {(tracking.statusHistory || []).length > 0 ? (
+                      tracking.statusHistory.map((entry: any, idx: number) => (
+                        <div
+                          key={`timeline-${idx}`}
+                          className="p-3 rounded-xl border border-white/10 bg-white/5 flex items-start justify-between gap-4"
+                        >
+                          <div>
+                            <p className="font-black text-white uppercase text-sm">{entry.status}</p>
+                            <p className="text-xs text-slate-400">{entry.note || "Status updated"}</p>
                           </div>
-                        ))}
-                      </motion.div>
+                          <p className="text-xs text-slate-500">
+                            {entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : ""}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 rounded-xl border border-white/10 bg-white/5 text-sm text-slate-400">
+                        Timeline not available yet.
+                      </div>
                     )}
-                  </AnimatePresence>
+                  </div>
                 </div>
-
-                <textarea 
-                  placeholder="Additional details about the issue..." 
-                  className="w-full bg-white/5 border border-white/10 rounded-xl md:rounded-2xl p-4 md:p-5 h-28 md:h-32 resize-none focus:border-indigo-500 outline-none text-xs md:text-sm font-medium transition-all" 
-                  required 
-                />
-
-                <button type="submit" className="w-full py-4 md:py-5 bg-indigo-600 rounded-xl md:rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all active:scale-95">
-                  <ArrowRight size={16} /> Confirm Return
-                </button>
-              </form>
+              ) : (
+                <div className="p-6 text-center text-slate-400 font-bold">No tracking data available.</div>
+              )}
             </motion.div>
           </div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );

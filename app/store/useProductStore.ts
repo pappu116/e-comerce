@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import API from "@/app/lib/api";
+import API from "@/app/lib/apiClient";
 
 export const useProductStore = create((set) => ({
   products: [],

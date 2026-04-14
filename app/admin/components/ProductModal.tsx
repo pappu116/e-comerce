@@ -319,6 +319,7 @@ interface ProductModalProps {
   onClose: () => void;
   product?: Product | null;
   onSave: (formData: FormData) => void;
+  isLoading?: boolean;
 }
 
 // Helper function to get full image URL
@@ -332,7 +333,7 @@ const getImageUrl = (path: string | undefined): string => {
   return `${backendBaseUrl}/${path.replace(/^\//, '')}`;
 };
 
-export default function ProductModal({ isOpen, onClose, product, onSave }: ProductModalProps) {
+export default function ProductModal({ isOpen, onClose, product, onSave, isLoading = false }: ProductModalProps) {
   
   const [formData, setFormData] = useState<Product>({
     name: '',
@@ -390,7 +391,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave }: Produ
       price: '',
       costPrice: '',
       stock: 0,
-      status: 'Published',
+      status: 'In Stock',
       description: '',
       image: '',
       images: []
@@ -586,9 +587,13 @@ export default function ProductModal({ isOpen, onClose, product, onSave }: Produ
             <button type="button" onClick={onClose} className="flex-1 py-4 border dark:border-gray-700 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-gray-800">
               Cancel
             </button>
-            <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 flex items-center justify-center gap-2">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
               <Save size={18} />
-              {product ? 'Update Product' : 'Save Product'}
+              {isLoading ? 'Saving...' : product ? 'Update Product' : 'Save Product'}
             </button>
           </div>
         </form>

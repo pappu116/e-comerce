@@ -7,8 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { User, Mail, Lock } from "lucide-react"; 
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/store/useAuth";
-import { authService } from "@/app/lib/api";
+import { useAuth } from "@/app/store/authStore";
 
 // Reusable Input Component
 const InputField = ({ type, placeholder, icon: Icon, value, onChange }: any) => (
@@ -29,7 +28,6 @@ const InputField = ({ type, placeholder, icon: Icon, value, onChange }: any) => 
 
 export default function RegisterPage() {
   const router = useRouter();
-  // স্টোর থেকে সরাসরি register ফাংশনটি নেওয়া হচ্ছে
   const registerAction = useAuth((state: any) => state.register);
   
   const [formData, setFormData] = useState({
@@ -39,37 +37,34 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
 
-// handleSubmit ফাংশনটি আপডেট করুন
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
-    if (formData.password.length < 6) {
-        alert("Password min 6 chars er hote hobe, bhai! 😅");
-        return;
-      }
+  if (formData.password.length < 6) {
+    alert("Password must be at least 6 characters.");
+    return;
+  }
       
   if (formData.password !== formData.confirmPassword) {
-    alert("Oops! Password mile nai. 🤯");
+    alert("Password and confirm password do not match.");
     return;
   }
 
   try {
-    const response = await authService.register({
+    const response = await registerAction({
       name: formData.name,
       email: formData.email,
       password: formData.password
     });
 
     if (response.success) {
-      alert("Registration Successful! Now please login.");
-      // টোকেন এবং ইউজার ডাটা লোকাল স্টোরেজে সেভ করুন (ঐচ্ছিক, লগইনে করা ভালো)
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("adminUser", JSON.stringify(response.user));
-      
-      router.push("/login"); 
+      router.push("/profile");
+      return;
     }
+
+    alert(response.message || "Registration failed.");
   } catch (error: any) {
-    const message = error.response?.data?.message || "Registration failed!";
+    const message = error?.response?.data?.message || error?.message || "Registration failed!";
     alert(message);
   }
 };
@@ -115,7 +110,6 @@ const handleSubmit = async (e: React.FormEvent) => {
             placeholder="Create Password (Min 6 characters)"
             icon={Lock}
             value={formData.password}
-            minLength={6} // ব্রাউজার লেভেল ভ্যালিডেশন
             onChange={(e: any) => setFormData({...formData, password: e.target.value})}
           />
           <InputField

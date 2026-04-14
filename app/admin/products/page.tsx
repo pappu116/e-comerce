@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'; // useCallback যো�
 import { Plus, Search, Loader2 } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import ProductModal from '../components/ProductModal';
-import { productService, getImageUrl } from '@/app/lib/api';
+import { productService, getImageUrl } from '@/app/lib/apiClient';
 
 export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');

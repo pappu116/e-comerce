@@ -8,8 +8,8 @@ import {
   BarChart3, ShieldCheck, Mail, CreditCard, 
   Smartphone, Database, LogOut
 } from 'lucide-react';
-import { orderService } from '@/app/lib/api'; 
-import { useAuth } from '@/app/store/useAuth'; // ✅ Zustand Store ইমপোর্ট করুন
+import { orderService } from '@/app/lib/apiClient'; 
+import { useAuth } from '@/app/store/authStore'; // ✅ Zustand Store ইমপোর্ট করুন
 
 // ১. মেনু স্ট্রাকচার
 const menuGroups = [
@@ -78,8 +78,7 @@ export default function Sidebar({
     const fetchSidebarData = async () => {
       try {
         const orderRes = await orderService.getAll();
-        // API response structure অনুযায়ী count সেট করুন
-        const count = orderRes?.data?.length || orderRes?.orders?.length || 0;
+        const count = Number(orderRes?.count || orderRes?.orders?.length || 0);
 
         setDynamicStats(prev => ({
           ...prev,

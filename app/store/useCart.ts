@@ -62,7 +62,9 @@
 // }));
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware' // ১. পারসিস্ট ইমপোর্ট করো
+import { persist } from 'zustand/middleware'
+const getItemId = (item: any) => item?._id || item?.id || '';
+// duplicate import removed
 
 export const useCart = create(
   persist(
@@ -72,28 +74,41 @@ export const useCart = create(
 
       // কার্টে প্রোডাক্ট যোগ করা
       addToCart: (product: any) => set((state: any) => {
-        const existingItem = state.items.find((item: any) => item.id === product.id);
+        const productId = getItemId(product);
+        if (!productId) return state;
+        const existingItem = state.items.find((item: any) => getItemId(item) === productId);
         if (existingItem) {
           return {
             items: state.items.map((item: any) =>
-              item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+              getItemId(item) === productId ? { ...item, quantity: item.quantity + 1 } : item
             ),
           };
         }
-        return { items: [...state.items, { ...product, quantity: 1 }] };
+        return {
+          items: [
+            ...state.items,
+            {
+              ...product,
+              _id: product._id || product.id,
+              id: product.id || product._id,
+              image: product.image || product.images?.[0] || '',
+              quantity: 1
+            }
+          ]
+        };
       }),
 
       // ২. কার্ট থেকে কোয়ান্টিটি বাড়ানো (+)
       increase: (id: string) => set((state: any) => ({
         items: state.items.map((item: any) =>
-          item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+          getItemId(item) === id ? { ...item, quantity: item.quantity + 1 } : item
         ),
       })),
 
       // ৩. কার্ট থেকে কোয়ান্টিটি কমানো (-)
       decrease: (id: string) => set((state: any) => ({
         items: state.items.map((item: any) =>
-          item.id === id && item.quantity > 1 
+          getItemId(item) === id && item.quantity > 1 
             ? { ...item, quantity: item.quantity - 1 } 
             : item
         ),
@@ -101,7 +116,7 @@ export const useCart = create(
 
       // ৪. কার্ট থেকে পুরোপুরি রিমুভ করা
       removeFromCart: (id: string) => set((state: any) => ({
-        items: state.items.filter((item: any) => item.id !== id)
+        items: state.items.filter((item: any) => getItemId(item) !== id)
       })),
 
       // ৫. অর্ডার সেভ করা এবং কার্ট খালি করা (এটি তোমার দরকার ছিল)

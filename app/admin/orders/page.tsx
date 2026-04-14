@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useRouter } from 'next/navigation';
 
 // API Service import
-import { orderService } from '@/app/lib/api'; 
+import { orderService } from '@/app/lib/apiClient'; 
 
 const statusStyles: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700 border-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.05)]",
