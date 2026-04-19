@@ -2,7 +2,9 @@
 import { ShoppingBag, ArrowRight, Star, Tag,Bell } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function DashboardOverview({ setActiveTab }: { setActiveTab: (id: string) => void }) {
+export { default } from "./dashboard-overview-dynamic";
+
+function DashboardOverviewLegacy({ setActiveTab }: { setActiveTab: (id: string) => void }) {
   return (
     <div className="space-y-8">
       {/* ১. প্রোমো ব্যানার (ই-কমার্সের জন্য মাস্ট) */}
@@ -49,7 +51,7 @@ export default function DashboardOverview({ setActiveTab }: { setActiveTab: (id:
             </div>
           </div>
           <div className="mt-4 md:mt-0 text-right">
-             <p className="text-xl font-black text-white">৳৩,৫০০</p>
+             <p className="text-xl font-black text-white">$৩,৫০০</p>
              <button className="mt-2 px-6 py-2 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">
                 Track Order
              </button>

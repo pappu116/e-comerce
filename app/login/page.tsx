@@ -55,9 +55,10 @@ const handleSubmit = async (e: React.FormEvent) => {
         return;
       }
 
+      const safeRedirect = redirectTo && redirectTo.startsWith("/") ? redirectTo : null;
       const redirectPath =
-        redirectTo ||
-        (currentUser.role === "admin" ? "/admin" : "/profile");
+        safeRedirect ||
+        (String(currentUser.role || "").toLowerCase() === "admin" ? "/admin" : "/profile");
       router.replace(redirectPath);   // replace ব্যবহার করা হয়েছে
     } else {
       setError(result.message || "Login failed");

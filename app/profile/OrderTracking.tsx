@@ -30,7 +30,7 @@ export default function OrderTracking() {
         {[
           { label: "Successful Orders", val: "48", icon: CheckCircle2, color: "text-emerald-500" },
           { label: "Pending Shipments", val: "02", icon: Package, color: "text-amber-500" },
-          { label: "Monthly Spends", val: "৳12,450", icon: DollarSign, color: "text-indigo-500" },
+          { label: "Monthly Spends", val: "$12,450", icon: DollarSign, color: "text-indigo-500" },
           { label: "Reward Gained", val: "850", icon: TrendingUp, color: "text-purple-500" },
         ].map((stat, i) => (
           <div key={i} className="bg-white/[0.03] border border-white/10 p-5 rounded-[2rem] flex items-center gap-4">
@@ -93,7 +93,7 @@ export default function OrderTracking() {
               </div>
               <div className="flex items-center gap-3">
                 <CreditCard size={16} className="text-indigo-200" />
-                <span className="text-xs font-bold italic">৳1,250 - bKash Paid</span>
+                <span className="text-xs font-bold italic">$1,250 - bKash Paid</span>
               </div>
               <div className="pt-4 border-t border-white/20">
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-200 mb-1">Status</p>

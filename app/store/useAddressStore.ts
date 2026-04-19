@@ -8,6 +8,7 @@ export interface Address {
   title: string;
   addressLine: string;
   phone: string;
+  zipCode?: string;
 }
 
 interface AddressState {
@@ -18,38 +19,50 @@ interface AddressState {
   setDefault: (id: string) => void;
 }
 
+const normalizeDefault = (addresses: Address[]): Address[] => {
+  if (addresses.length === 0) return [];
+  const hasDefault = addresses.some((address) => address.isDefault);
+  if (hasDefault) return addresses;
+  return addresses.map((address, index) => ({ ...address, isDefault: index === 0 }));
+};
+
 export const useAddressStore = create<AddressState>()(
   persist(
     (set) => ({
-      addresses: [
-        {
-          id: "1",
-          type: "Home",
-          isDefault: true,
-          title: "Dhanmondi, Dhaka",
-          addressLine: "House #12/A, Road #05, Dhanmondi R/A, Dhaka 1209",
-          phone: "+880 1711-223344",
-        },
-      ],
+      addresses: [],
 
-      addAddress: (address) => set((state) => ({ 
-        addresses: [...state.addresses, address] 
-      })),
+      addAddress: (address) =>
+        set((state) => {
+          const willBeDefault = state.addresses.length === 0 || address.isDefault;
+          const next = [
+            ...state.addresses.map((item) =>
+              willBeDefault ? { ...item, isDefault: false } : item
+            ),
+            { ...address, isDefault: willBeDefault },
+          ];
+          return { addresses: normalizeDefault(next) };
+        }),
 
-      updateAddress: (id, updatedAddress) => set((state) => ({
-        addresses: state.addresses.map((addr) => (addr.id === id ? updatedAddress : addr)),
-      })),
+      updateAddress: (id, updatedAddress) =>
+        set((state) => {
+          const next = state.addresses.map((addr) => (addr.id === id ? { ...updatedAddress, id } : addr));
+          return { addresses: normalizeDefault(next) };
+        }),
 
-      deleteAddress: (id) => set((state) => ({
-        addresses: state.addresses.filter((addr) => addr.id !== id),
-      })),
+      deleteAddress: (id) =>
+        set((state) => {
+          const next = state.addresses.filter((addr) => addr.id !== id);
+          return { addresses: normalizeDefault(next) };
+        }),
 
-      setDefault: (id) => set((state) => ({
-        addresses: state.addresses.map((addr) => ({
-          ...addr,
-          isDefault: addr.id === id,
-        })),
-      })),
+      setDefault: (id) =>
+        set((state) => {
+          const next = state.addresses.map((addr) => ({
+            ...addr,
+            isDefault: addr.id === id,
+          }));
+          return { addresses: normalizeDefault(next) };
+        }),
     }),
     { name: "address-storage" }
   )

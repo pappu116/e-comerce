@@ -31,7 +31,7 @@ export default function NotificationsSection() {
     },
     { 
       title: "Payment Successful", 
-      desc: "We have received your payment of ৳1250 for order #PREM-10245.", 
+      desc: "We have received your payment of $1250 for order #PREM-10245.", 
       icon: CreditCard, 
       color: "text-green-400 bg-green-400/10 border-green-400/20", 
       time: "1d ago" 

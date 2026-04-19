@@ -107,11 +107,11 @@ export default function OrderDetailsModal({ isOpen, onClose, order }: OrderDetai
                         <p className="text-[10px] text-slate-400 font-black mt-1 uppercase tracking-widest">
                           Qty: <span className="text-slate-900 dark:text-slate-200">{item.quantity}</span> 
                           <span className="mx-2">×</span> 
-                          ৳{item.price.toLocaleString()}
+                          ${item.price.toLocaleString()}
                         </p>
                       </div>
                     </div>
-                    <p className="text-xl font-black text-slate-900 dark:text-white italic tracking-tighter">৳{(item.quantity * item.price).toLocaleString()}</p>
+                    <p className="text-xl font-black text-slate-900 dark:text-white italic tracking-tighter">${(item.quantity * item.price).toLocaleString()}</p>
                   </div>
                 ))}
               </div>
@@ -128,7 +128,7 @@ export default function OrderDetailsModal({ isOpen, onClose, order }: OrderDetai
             <div className="space-y-5 relative z-10">
                <div className="flex justify-between text-[11px] font-black uppercase tracking-widest opacity-40">
                  <span>Subtotal</span>
-                 <span>৳{(order.totalPrice || order.totalAmount).toLocaleString()}</span>
+                 <span>${(order.totalPrice || order.totalAmount).toLocaleString()}</span>
                </div>
                <div className="flex justify-between text-[11px] font-black uppercase tracking-widest opacity-40">
                  <span>Shipping Logistics</span>
@@ -140,7 +140,7 @@ export default function OrderDetailsModal({ isOpen, onClose, order }: OrderDetai
                     <span className="text-lg font-bold text-blue-400 uppercase tracking-tighter">Verified Amount</span>
                  </div>
                  <span className="text-5xl font-black text-white italic tracking-tighter">
-                   ৳{(order.totalPrice || order.totalAmount).toLocaleString()}
+                   ${(order.totalPrice || order.totalAmount).toLocaleString()}
                  </span>
                </div>
             </div>

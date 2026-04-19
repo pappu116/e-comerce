@@ -1,3 +1,7 @@
+export * from "./apiClient";
+export { default } from "./apiClient";
+
+/*
 // app/lib/api.ts
 // import axios from "axios";
 
@@ -192,9 +196,13 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 // ================== BASE URL ==================
-const RAW_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, "");
-const API_BASE_URL = RAW_BASE_URL.endsWith("/api") ? RAW_BASE_URL : `${RAW_BASE_URL}/api`;
-const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+const RAW_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const API_BASE_URL = RAW_BASE_URL
+  ? (RAW_BASE_URL.endsWith("/api") ? RAW_BASE_URL : `${RAW_BASE_URL}/api`)
+  : "/api";
+const BACKEND_BASE_URL = RAW_BASE_URL
+  ? (RAW_BASE_URL.endsWith("/api") ? RAW_BASE_URL.replace(/\/api\/?$/, "") : RAW_BASE_URL)
+  : "";
 
 // ================== AXIOS INSTANCE ==================
 const API = axios.create({
@@ -410,7 +418,7 @@ export const getImageUrl = (path?: string): string => {
   if (!path) return "https://via.placeholder.com/400x400?text=No+Image";
   if (path.startsWith("http")) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${BACKEND_BASE_URL}${normalizedPath}`;
+  return BACKEND_BASE_URL ? `${BACKEND_BASE_URL}${normalizedPath}` : normalizedPath;
 };
 
 export default API;
@@ -420,3 +428,4 @@ export const getIPs = securityService.getIPs;
 export const addIP = securityService.addIP;
 export const deleteIP = securityService.deleteIP;
 export const update2FA = securityService.toggle2FA;
+*/

@@ -1,345 +1,583 @@
-
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  DollarSign, ShoppingCart, Users, Package, 
-  TrendingUp, Search, Loader2, ArrowRight 
-} from 'lucide-react';
-import { Input } from "@/components/ui/input"; 
-import DataTable from './components/DataTable';
-import API from '@/app/lib/apiClient'; 
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  AlertCircle,
+  BarChart3,
+  DollarSign,
+  Package,
+  RefreshCw,
+  ShoppingCart,
+  Users,
+} from "lucide-react";
+import API, { handleApiError } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/store/authStore";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function AdminDashboard() {
-  const router = useRouter();
-  const { user, isLoggedIn, loading: authLoading, checkAuth } = useAuth();
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [isChecking, setIsChecking] = useState(true);
-
-  const [data, setData] = useState<any>({
-    stats: { totalRevenue: 0, totalOrders: 0, totalCustomers: 0, totalProducts: 0 },
-    recentOrders: []
-  });
-
-  // Auth Check
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  // Protection & Data Fetch
-  useEffect(() => {
-    if (authLoading) return;
-    if (!isLoggedIn) {
-      router.replace("/login?redirect=/admin");
-      return;
-    }
-    if (user?.role !== "admin") {
-      router.replace("/profile");
-      return;
-    }
-    setIsChecking(false);
-    fetchStats();
-  }, [isLoggedIn, user, authLoading, router]);
-
-  // const fetchStats = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const res = await API.get('/admin/dashboard');
-  //     console.log("Full API Response:", res.data);   // ← এটা খুব জরুরি
-
-  //     if (res.data?.success) {
-  //       const s = res.data.stats || {};
-  //       setData({
-  //         stats: {
-  //           totalRevenue: s.totalSales || s.totalRevenue || 0,
-  //           totalOrders: s.totalOrders || 0,
-  //           totalCustomers: s.totalCustomers || s.totalUsers || 0,
-  //           totalProducts: s.totalProducts || 0,
-  //         },
-  //         recentOrders: res.data.recentOrders || []   // এখানে res.data.recentOrders
-  //       });
-  //     }
-  //   } catch (err) {
-  //     console.error("Dashboard error:", err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-//   const fetchStats = async () => {
-//   try {
-//     setLoading(true);
-//     const res = await API.get('/admin/dashboard');
-    
-//     console.log("Full API Response:", res.data);   // ← এটা খুব জরুরি
-    
-//     if (res.data?.success) {
-//       setData({
-//         stats: {
-//           totalRevenue: res.data.stats?.totalSales || res.data.stats?.totalRevenue || 0,
-//           totalOrders: res.data.stats?.totalOrders || 0,
-//           totalCustomers: res.data.stats?.totalCustomers || res.data.stats?.totalUsers || 0,
-//           totalProducts: res.data.stats?.totalProducts || 0,
-//         },
-//         recentOrders: res.data.recentOrders || res.data.data?.recentOrders || [],  // এখানে চেক করো
-//       });
-//     } else {
-//       console.error("API success false:", res.data);
-//     }
-//   } catch (err) {
-//     console.error("Dashboard fetch error:", err);
-//     // এখানে toast বা error state দেখাতে পারো
-//   } finally {
-//     setLoading(false);
-//   }
-// };
-
-const fetchStats = async () => {
-  try {
-    setLoading(true);
-    const res = await API.get('/admin/dashboard');
-    
-    console.log("✅ Dashboard Response:", JSON.stringify(res.data, null, 2));
-
-    const apiData = res.data || {};
-    
-    setData({
-      // stats: {
-      //   totalRevenue: apiData.stats?.totalSales || apiData.stats?.totalRevenue || 0,
-      //   totalOrders: apiData.stats?.totalOrders || apiData.totalOrders || 0,
-      //   totalCustomers: apiData.stats?.totalCustomers || apiData.totalUsers || 0,
-      //   totalProducts: apiData.stats?.totalProducts || 0,
-      // },
-      stats: {
-        totalRevenue:   apiData.stats?.totalSales   || 0,
-        totalOrders:    apiData.stats?.totalOrders  || 0,
-        totalCustomers: apiData.stats?.totalCustomers || 0,
-        totalProducts:  apiData.stats?.totalProducts || 0,
-      },
-      recentOrders: apiData.recentOrders || apiData.data?.recentOrders || []
-    });
-  } catch (err: any) {
-    console.error("❌ Dashboard Error:", err.response?.data || err.message);
-  } finally {
-    setLoading(false);
-  }
+type AdminStats = {
+  totalUsers: number;
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
 };
 
-// Stats Cards Definition
-const statsCards = [
-  { 
-    title: "Total Revenue", 
-    value: `৳${(data.stats.totalRevenue || 0).toLocaleString()}`, 
-    change: "+12.5%", 
-    icon: DollarSign, 
-    color: "text-emerald-600 dark:text-emerald-400", 
-    bg: "bg-emerald-100 dark:bg-emerald-500/10", 
-    border: "border-emerald-200 dark:border-emerald-500/20",
-    route: "/admin/analytics"          // Revenue/Analysis page
-  },
-  { 
-    title: "Total Orders",   
-    value: (data.stats.totalOrders || 0).toLocaleString(), 
-    change: "+8.2%", 
-    icon: ShoppingCart, 
-    color: "text-blue-600 dark:text-blue-400", 
-    bg: "bg-blue-100 dark:bg-blue-500/10", 
-    border: "border-blue-200 dark:border-blue-500/20",
-    route: "/admin/orders"            // All Orders page
-  },
-  { 
-    title: "Total Customers",
-    value: (data.stats.totalCustomers || 0).toLocaleString(), 
-    change: "+5.1%", 
-    icon: Users, 
-    color: "text-violet-600 dark:text-violet-400", 
-    bg: "bg-violet-100 dark:bg-violet-500/10", 
-    border: "border-violet-200 dark:border-violet-500/20",
-    route: "/admin/customers"         // All Customers page
-  },
-  { 
-    title: "Total Products", 
-    value: (data.stats.totalProducts || 0).toLocaleString(), 
-    change: "-2.4%", 
-    icon: Package, 
-    color: "text-amber-600 dark:text-amber-400", 
-    bg: "bg-amber-100 dark:bg-amber-500/10", 
-    border: "border-amber-200 dark:border-amber-500/20",
-    route: "/admin/products"          // All Products page
-  },
-];
+type Pagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
 
-  const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return data.recentOrders || [];
-    const q = searchQuery.toLowerCase();
-    return (data.recentOrders || []).filter((order: any) =>
-      order._id?.toLowerCase().includes(q) ||
-      order.user?.name?.toLowerCase().includes(q) ||
-      order.user?.email?.toLowerCase().includes(q) ||
-      order.status?.toLowerCase().includes(q)
-    );
-  }, [searchQuery, data.recentOrders]);
+type DashboardOrder = {
+  _id: string;
+  orderNumber?: string;
+  user?: { name?: string; email?: string };
+  status?: string;
+  totalAmount?: number;
+  createdAt?: string;
+};
 
-  const columns = [
-    { 
-      key: "_id", 
-      label: "Order ID",
-      render: (id: string) => (
-        <span className="font-mono text-sm font-semibold text-slate-800 dark:text-slate-200">
-          #{id?.slice(-8).toUpperCase()}
-        </span>
-      )
-    },
-    { 
-      key: "user", 
-      label: "Customer",
-      render: (userData: any) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-slate-900 dark:text-white text-base">
-            {userData?.name || userData?.fullName || "Guest User"}
-          </span>
-          <span className="text-sm text-slate-600 dark:text-slate-400">
-            {userData?.email || "No email provided"}
-          </span>
-        </div>
-      )
-    },
-    { 
-      key: "totalAmount", 
-      label: "Amount",
-      render: (amount: number) => (
-        <span className="font-bold text-lg text-emerald-600 dark:text-emerald-400">
-          ৳{(amount || 0).toLocaleString()}
-        </span>
-      )
-    },
-    { 
-      key: "status", 
-      label: "Status",
-      render: (status: string) => {
-        const styles: any = {
-          delivered: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30",
-          pending: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30",
-          shipped: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30",
-          processing: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30",
-          cancelled: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-500/30",
-        };
-        return (
-          <span className={`px-5 py-2 text-xs font-bold rounded-2xl uppercase tracking-widest border ${styles[status?.toLowerCase()] || "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
-            {status || "Pending"}
-          </span>
-        );
-      }
-    },
-    { 
-      key: "createdAt", 
-      label: "Date",
-      render: (date: string) => date 
-        ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) 
-        : 'N/A'
-    },
-  ];
+type DashboardUser = {
+  _id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  status?: string;
+  createdAt?: string;
+};
 
-  if (authLoading || isChecking || loading) {
+const EMPTY_STATS: AdminStats = {
+  totalUsers: 0,
+  totalProducts: 0,
+  totalOrders: 0,
+  totalRevenue: 0,
+};
+
+const PAGE_SIZES = [10, 50, 100];
+
+const toNumber = (value: unknown) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const defaultPagination = (limit: number): Pagination => ({
+  page: 1,
+  limit,
+  total: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPrevPage: false,
+});
+
+const formatCount = (value: number) => new Intl.NumberFormat("en-US").format(value);
+const formatMoney = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+
+export default function AdminDashboardPage() {
+  const router = useRouter();
+  const user = useAuth((state) => state.user);
+  const [stats, setStats] = useState<AdminStats>(EMPTY_STATS);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState("");
+
+  const [orders, setOrders] = useState<DashboardOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersLimit, setOrdersLimit] = useState(10);
+  const [ordersPagination, setOrdersPagination] = useState<Pagination>(defaultPagination(10));
+
+  const [users, setUsers] = useState<DashboardUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState("");
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersLimit, setUsersLimit] = useState(10);
+  const [usersPagination, setUsersPagination] = useState<Pagination>(defaultPagination(10));
+
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    setStatsError("");
+    try {
+      const { data } = await API.get("/admin/stats");
+      const payload = data?.stats || data || {};
+      setStats({
+        totalUsers: toNumber(payload.totalUsers),
+        totalProducts: toNumber(payload.totalProducts),
+        totalOrders: toNumber(payload.totalOrders),
+        totalRevenue: toNumber(payload.totalRevenue),
+      });
+    } catch (error) {
+      setStatsError(handleApiError(error));
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  const fetchOrders = useCallback(async (page: number, limit: number) => {
+    setOrdersLoading(true);
+    setOrdersError("");
+    try {
+      const { data } = await API.get("/admin/orders", { params: { page, limit } });
+      setOrders(Array.isArray(data?.orders) ? data.orders : []);
+      const pg = data?.pagination || {};
+      setOrdersPagination({
+        page: toNumber(pg.page) || page,
+        limit: toNumber(pg.limit) || limit,
+        total: toNumber(pg.total),
+        totalPages: Math.max(1, toNumber(pg.totalPages) || 1),
+        hasNextPage: Boolean(pg.hasNextPage),
+        hasPrevPage: Boolean(pg.hasPrevPage),
+      });
+    } catch (error) {
+      setOrdersError(handleApiError(error));
+      setOrders([]);
+      setOrdersPagination(defaultPagination(limit));
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async (page: number, limit: number) => {
+    setUsersLoading(true);
+    setUsersError("");
+    try {
+      const { data } = await API.get("/admin/users", { params: { page, limit } });
+      setUsers(Array.isArray(data?.users) ? data.users : []);
+      const pg = data?.pagination || {};
+      setUsersPagination({
+        page: toNumber(pg.page) || page,
+        limit: toNumber(pg.limit) || limit,
+        total: toNumber(pg.total),
+        totalPages: Math.max(1, toNumber(pg.totalPages) || 1),
+        hasNextPage: Boolean(pg.hasNextPage),
+        hasPrevPage: Boolean(pg.hasPrevPage),
+      });
+    } catch (error) {
+      setUsersError(handleApiError(error));
+      setUsers([]);
+      setUsersPagination(defaultPagination(limit));
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchStats();
+  }, [fetchStats]);
+
+  useEffect(() => {
+    void fetchOrders(ordersPage, ordersLimit);
+  }, [ordersPage, ordersLimit, fetchOrders]);
+
+  useEffect(() => {
+    void fetchUsers(usersPage, usersLimit);
+  }, [usersPage, usersLimit, fetchUsers]);
+
+  const refreshAll = async () => {
+    await Promise.all([
+      fetchStats(),
+      fetchOrders(ordersPage, ordersLimit),
+      fetchUsers(usersPage, usersLimit),
+    ]);
+  };
+
+  const cards = useMemo(
+    () => [
+      {
+        title: "Total Revenue",
+        value: formatMoney(stats.totalRevenue),
+        subtitle: "Delivered orders",
+        icon: DollarSign,
+        accent: "from-emerald-500/20 to-cyan-500/10",
+      },
+      {
+        title: "Total Orders",
+        value: formatCount(stats.totalOrders),
+        subtitle: "All order records",
+        icon: ShoppingCart,
+        accent: "from-indigo-500/20 to-violet-500/10",
+      },
+      {
+        title: "Total Users",
+        value: formatCount(stats.totalUsers),
+        subtitle: "Registered members",
+        icon: Users,
+        accent: "from-blue-500/20 to-sky-500/10",
+      },
+      {
+        title: "Total Products",
+        value: formatCount(stats.totalProducts),
+        subtitle: "Catalog inventory",
+        icon: Package,
+        accent: "from-amber-500/20 to-orange-500/10",
+      },
+    ],
+    [stats]
+  );
+
+  if (statsLoading && !statsError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-blue-600 dark:text-blue-500" size={60} />
-          <p className="text-slate-600 dark:text-slate-400 font-medium">Syncing Dashboard...</p>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <div className="h-8 w-72 animate-pulse rounded-md bg-muted" />
+          <div className="h-4 w-52 animate-pulse rounded-md bg-muted" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Card key={idx} className="border-border/60">
+              <CardHeader>
+                <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-8 w-28 animate-pulse rounded bg-muted" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 px-4 py-8 max-w-[1600px] mx-auto space-y-10">
-
-      {/* Header */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white">
-            Welcome, <span className="text-blue-600 dark:text-blue-400">{user?.name?.split(' ')[0] || "Admin"}</span>
-          </h1>
-          <p className="mt-3 text-slate-600 dark:text-slate-400 flex items-center gap-2 text-base">
-            <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
-            System Live • Real-time Database Statistics
+          <h1 className="text-3xl font-black tracking-tight">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Welcome back, {user?.name || "Admin"}.
           </p>
         </div>
-
-        <div className="relative w-full max-w-lg">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-          <Input
-            placeholder="Search Order ID, Customer Name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-14 h-14 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-3xl focus:border-blue-500 text-slate-900 dark:text-white placeholder:text-slate-500"
-          />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            className="gap-2"
+            onClick={() => router.push("/admin/analyzing")}
+          >
+            <BarChart3 className="size-4" />
+            Open Analyzing
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={refreshAll}>
+            <RefreshCw className="size-4" />
+            Refresh
+          </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map((stat, i) => {
-          const Icon = stat.icon;
+      {statsError ? (
+        <Card className="border-destructive/30">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <p className="flex items-center gap-2 text-sm font-medium text-destructive">
+              <AlertCircle className="size-4" />
+              {statsError}
+            </p>
+            <Button size="sm" variant="outline" className="gap-2" onClick={fetchStats}>
+              <RefreshCw className="size-4" />
+              Retry stats
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
           return (
-            <div key={i} onClick={() => router.push(stat.route)} className={`group bg-white dark:bg-white/5 backdrop-blur-xl border ${stat.border} rounded-3xl p-8 shadow-sm dark:shadow-2xl transition-all hover:scale-[1.02]`}>
-              <div className="flex justify-between items-start">
-                <div className={`p-4 rounded-2xl ${stat.bg}`}>
-                  <Icon className={stat.color} size={32} />
+            <Card
+              key={card.title}
+              className={`overflow-hidden border-border/60 bg-gradient-to-br ${card.accent}`}
+            >
+              <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                <div>
+                  <CardTitle className="text-sm text-muted-foreground">{card.title}</CardTitle>
+                  <CardDescription className="pt-1 text-2xl font-black text-foreground">
+                    {card.value}
+                  </CardDescription>
                 </div>
-                <div className="text-right">
-                  <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mt-1">
-                    {stat.title}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-8 flex items-center gap-2">
-                <span className={`flex items-center text-sm font-bold ${stat.color}`}>
-                  <TrendingUp size={18} className="mr-1" /> {stat.change}
+                <span className="rounded-xl border bg-background/60 p-2">
+                  <Icon className="size-4 text-foreground/80" />
                 </span>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground">{card.subtitle}</CardContent>
+            </Card>
           );
         })}
       </div>
 
-      {/* Recent Transactions */}
-      <div className="bg-white dark:bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-slate-200 dark:border-white/10 p-8 md:p-10 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-4">
-              <span className="w-9 h-[3px] bg-gradient-to-r from-blue-600 to-violet-600 rounded" />
-              Recent Transactions
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">Fetching live entries from MongoDB</p>
-          </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <PaginatedOrdersCard
+          orders={orders}
+          loading={ordersLoading}
+          error={ordersError}
+          page={ordersPage}
+          limit={ordersLimit}
+          pagination={ordersPagination}
+          onPrev={() => setOrdersPage((prev) => Math.max(1, prev - 1))}
+          onNext={() => setOrdersPage((prev) => prev + 1)}
+          onLimitChange={(value) => {
+            setOrdersLimit(value);
+            setOrdersPage(1);
+          }}
+        />
 
-          <button 
-            onClick={() => router.push('/admin/orders')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95"
-          >
-            Explore All Orders <ArrowRight size={20} />
-          </button>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden">
-          {filteredOrders.length > 0 ? (
-            <DataTable data={filteredOrders} columns={columns} />
-          ) : (
-            <div className="py-20 text-center">
-              <Package className="mx-auto text-slate-400 mb-4" size={64} />
-              <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">No transactions recorded yet</p>
-            </div>
-          )}
-        </div>
+        <PaginatedUsersCard
+          users={users}
+          loading={usersLoading}
+          error={usersError}
+          page={usersPage}
+          limit={usersLimit}
+          pagination={usersPagination}
+          onPrev={() => setUsersPage((prev) => Math.max(1, prev - 1))}
+          onNext={() => setUsersPage((prev) => prev + 1)}
+          onLimitChange={(value) => {
+            setUsersLimit(value);
+            setUsersPage(1);
+          }}
+        />
       </div>
     </div>
+  );
+}
+
+function PaginationBar({
+  page,
+  limit,
+  pagination,
+  disabled,
+  onPrev,
+  onNext,
+  onLimitChange,
+}: {
+  page: number;
+  limit: number;
+  pagination: Pagination;
+  disabled: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  onLimitChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span>Rows:</span>
+        <select
+          value={limit}
+          onChange={(event) => onLimitChange(Number(event.target.value))}
+          className="h-8 rounded-md border bg-background px-2 text-xs"
+          disabled={disabled}
+        >
+          {PAGE_SIZES.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+        <span>
+          Page {page} of {pagination.totalPages}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onPrev}
+          disabled={disabled || !pagination.hasPrevPage}
+        >
+          Previous
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onNext}
+          disabled={disabled || !pagination.hasNextPage}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function PaginatedOrdersCard({
+  orders,
+  loading,
+  error,
+  page,
+  limit,
+  pagination,
+  onPrev,
+  onNext,
+  onLimitChange,
+}: {
+  orders: DashboardOrder[];
+  loading: boolean;
+  error: string;
+  page: number;
+  limit: number;
+  pagination: Pagination;
+  onPrev: () => void;
+  onNext: () => void;
+  onLimitChange: (value: number) => void;
+}) {
+  return (
+    <Card className="border-border/60">
+      <CardHeader>
+        <CardTitle>Recent Orders</CardTitle>
+        <CardDescription>Paginated live data from `/api/admin/orders`</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error ? <p className="text-sm font-semibold text-rose-500">{error}</p> : null}
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-muted/40">
+              <tr>
+                <th className="px-3 py-2 text-left">Order</th>
+                <th className="px-3 py-2 text-left">Customer</th>
+                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">
+                    Loading orders...
+                  </td>
+                </tr>
+              ) : orders.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">
+                    No orders found.
+                  </td>
+                </tr>
+              ) : (
+                orders.map((order) => (
+                  <tr key={order._id} className="border-t">
+                    <td className="px-3 py-3">
+                      <p className="font-semibold">
+                        {order.orderNumber || `#${String(order._id).slice(-8).toUpperCase()}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A"}
+                      </p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <p className="font-medium">{order.user?.name || "Unknown"}</p>
+                      <p className="text-xs text-muted-foreground">{order.user?.email || "N/A"}</p>
+                    </td>
+                    <td className="px-3 py-3 uppercase text-xs">{order.status || "pending"}</td>
+                    <td className="px-3 py-3 text-right font-semibold">
+                      {formatMoney(toNumber(order.totalAmount))}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <PaginationBar
+          page={page}
+          limit={limit}
+          pagination={pagination}
+          disabled={loading}
+          onPrev={onPrev}
+          onNext={onNext}
+          onLimitChange={onLimitChange}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function PaginatedUsersCard({
+  users,
+  loading,
+  error,
+  page,
+  limit,
+  pagination,
+  onPrev,
+  onNext,
+  onLimitChange,
+}: {
+  users: DashboardUser[];
+  loading: boolean;
+  error: string;
+  page: number;
+  limit: number;
+  pagination: Pagination;
+  onPrev: () => void;
+  onNext: () => void;
+  onLimitChange: (value: number) => void;
+}) {
+  return (
+    <Card className="border-border/60">
+      <CardHeader>
+        <CardTitle>Recent Users</CardTitle>
+        <CardDescription>Paginated live data from `/api/admin/users`</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error ? <p className="text-sm font-semibold text-rose-500">{error}</p> : null}
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-muted/40">
+              <tr>
+                <th className="px-3 py-2 text-left">Name</th>
+                <th className="px-3 py-2 text-left">Email</th>
+                <th className="px-3 py-2 text-left">Role</th>
+                <th className="px-3 py-2 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">
+                    Loading users...
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">
+                    No users found.
+                  </td>
+                </tr>
+              ) : (
+                users.map((member) => (
+                  <tr key={member._id} className="border-t">
+                    <td className="px-3 py-3">
+                      <p className="font-semibold">{member.name || "N/A"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
+                      </p>
+                    </td>
+                    <td className="px-3 py-3">{member.email || "N/A"}</td>
+                    <td className="px-3 py-3 uppercase text-xs">{member.role || "user"}</td>
+                    <td className="px-3 py-3 uppercase text-xs">{member.status || "active"}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <PaginationBar
+          page={page}
+          limit={limit}
+          pagination={pagination}
+          disabled={loading}
+          onPrev={onPrev}
+          onNext={onNext}
+          onLimitChange={onLimitChange}
+        />
+      </CardContent>
+    </Card>
   );
 }

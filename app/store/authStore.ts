@@ -12,6 +12,27 @@ export interface AuthUser {
   role: UserRole;
   status?: "active" | "suspended";
   phone?: string;
+  address?: string;
+  profileImage?: string;
+  addresses?: Array<{
+    id: string;
+    type: "Home" | "Office" | "Other";
+    label: string;
+    fullName: string;
+    phone: string;
+    addressLine: string;
+    city: string;
+    area?: string;
+    postalCode?: string;
+    country?: string;
+    isDefault: boolean;
+  }>;
+  notificationPreferences?: {
+    emailOrders: boolean;
+    emailPromotions: boolean;
+    smsAlerts: boolean;
+    pushAlerts: boolean;
+  };
 }
 
 interface RegisterPayload {
@@ -36,6 +57,33 @@ interface AuthState {
   login: (email: string, password: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  updateProfile: (payload: {
+    name?: string;
+    phone?: string;
+    address?: string;
+    profileImage?: string;
+    addresses?: Array<{
+      id?: string;
+      type?: "Home" | "Office" | "Other";
+      label: string;
+      fullName: string;
+      phone: string;
+      addressLine: string;
+      city: string;
+      area?: string;
+      postalCode?: string;
+      country?: string;
+      isDefault?: boolean;
+    }>;
+    notificationPreferences?: {
+      emailOrders?: boolean;
+      emailPromotions?: boolean;
+      smsAlerts?: boolean;
+      pushAlerts?: boolean;
+    };
+  }) => Promise<AuthResult>;
+  uploadAvatar: (formData: FormData) => Promise<AuthResult>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
   clearError: () => void;
   setHydrated: () => void;
 }
@@ -50,6 +98,11 @@ const setAccessToken = (token?: string) => {
 const removeAccessToken = () => {
   if (!isBrowser()) return;
   localStorage.removeItem("token");
+};
+
+const hasAccessToken = () => {
+  if (!isBrowser()) return false;
+  return Boolean(localStorage.getItem("token"));
 };
 
 export const useAuth = create<AuthState>()(
@@ -140,6 +193,16 @@ export const useAuth = create<AuthState>()(
 
         checkAuth: async () => {
           set({ loading: true, error: null });
+
+          if (!hasAccessToken()) {
+            set({
+              user: null,
+              isLoggedIn: false,
+              loading: false,
+            });
+            return;
+          }
+
           try {
             const data = await authService.getMe();
             const userData = data?.user || null;
@@ -163,6 +226,74 @@ export const useAuth = create<AuthState>()(
             });
           }
         },
+
+        updateProfile: async (payload) => {
+          set({ loading: true, error: null });
+          try {
+            const data = await authService.updateMe(payload);
+            const userData = data?.user || null;
+            if (!data?.success || !userData) {
+              const message = data?.message || "Failed to update profile";
+              set({ loading: false, error: message });
+              return { success: false, message };
+            }
+
+            set({
+              user: userData,
+              isLoggedIn: true,
+              loading: false,
+              error: null,
+            });
+            return { success: true, message: data?.message };
+          } catch (error: any) {
+            const message = handleApiError(error);
+            set({ loading: false, error: message });
+            return { success: false, message };
+          }
+        },
+
+        uploadAvatar: async (formData) => {
+          set({ loading: true, error: null });
+          try {
+            const data = await authService.uploadAvatar(formData);
+            const userData = data?.user || null;
+            if (!data?.success || !userData) {
+              const message = data?.message || "Failed to upload avatar";
+              set({ loading: false, error: message });
+              return { success: false, message };
+            }
+
+            set({
+              user: userData,
+              isLoggedIn: true,
+              loading: false,
+              error: null,
+            });
+            return { success: true, message: data?.message };
+          } catch (error: any) {
+            const message = handleApiError(error);
+            set({ loading: false, error: message });
+            return { success: false, message };
+          }
+        },
+
+        changePassword: async (currentPassword, newPassword) => {
+          set({ loading: true, error: null });
+          try {
+            const data = await authService.changePassword({ currentPassword, newPassword });
+            if (!data?.success) {
+              const message = data?.message || "Failed to change password";
+              set({ loading: false, error: message });
+              return { success: false, message };
+            }
+            set({ loading: false, error: null });
+            return { success: true, message: data?.message };
+          } catch (error: any) {
+            const message = handleApiError(error);
+            set({ loading: false, error: message });
+            return { success: false, message };
+          }
+        },
       }),
       {
         name: "auth-storage",
@@ -178,4 +309,3 @@ export const useAuth = create<AuthState>()(
     { name: "auth-store" }
   )
 );
-

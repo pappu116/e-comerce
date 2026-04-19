@@ -1,187 +1,275 @@
-'use client';
-import { useState, useEffect, useCallback } from 'react'; // useCallback যোগ করা হয়েছে
-import { Plus, Search, Loader2 } from 'lucide-react';
-import DataTable from '../components/DataTable';
-import ProductModal from '../components/ProductModal';
-import { productService, getImageUrl } from '@/app/lib/apiClient';
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, Plus, Search } from "lucide-react";
+import DataTable from "../components/DataTable";
+import ProductModal from "../components/ProductModal";
+import { adminProductService, getImageUrl, productService } from "@/app/lib/apiClient";
+
+type Product = {
+  _id: string;
+  id?: string;
+  name: string;
+  category: string;
+  price: string;
+  costPrice?: string;
+  stock: number;
+  status: string;
+  description?: string;
+  image?: string;
+  images?: string[];
+};
+
+type PaginationState = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+
+const PAGE_SIZES = [10, 50, 100] as const;
 
 export default function ProductsPage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null); // Type added
-  const [products, setProducts] = useState<any[]>([]); // Type added
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState<number>(10);
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
 
-  // 1. Fetch Products Logic (useCallback দিয়ে অপ্টিমাইজ করা হয়েছে)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await productService.getAll();
-      // Backend response logic handle
-      if (response && response.success) {
-        setProducts(response.products);
-      } else {
-        setProducts(Array.isArray(response) ? response : []);
-      }
+      const response = await adminProductService.getAll({
+        page,
+        limit,
+        search: search || undefined,
+      });
+
+      const rows = Array.isArray(response?.products)
+        ? response.products.map((row: any) => ({
+            ...row,
+            id: row._id,
+            price: String(row?.price ?? ""),
+            costPrice: String(row?.costPrice ?? ""),
+            status: row?.status || (Number(row?.stock || 0) > 0 ? "In Stock" : "Out of Stock"),
+          }))
+        : Array.isArray(response)
+          ? response.map((row: any) => ({
+              ...row,
+              id: row._id,
+              price: String(row?.price ?? ""),
+              costPrice: String(row?.costPrice ?? ""),
+              status: row?.status || (Number(row?.stock || 0) > 0 ? "In Stock" : "Out of Stock"),
+            }))
+          : [];
+      const total = Number(response?.total || rows.length || 0);
+      const totalPages = Math.max(1, Number(response?.pages || Math.ceil(total / limit) || 1));
+      const currentPage = Math.min(Math.max(Number(response?.page || page) || page, 1), totalPages);
+
+      setProducts(rows);
+      setPagination({
+        page: currentPage,
+        limit: Number(limit),
+        total,
+        totalPages,
+        hasNextPage: currentPage < totalPages,
+        hasPrevPage: currentPage > 1,
+      });
     } catch (error) {
       console.error("Failed to fetch products:", error);
+      setProducts([]);
+      setPagination({
+        page: 1,
+        limit,
+        total: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [limit, page, search]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // 2. Filter Logic (Safe mapping check added)
-  const filteredProducts = products.filter(product =>
-    (product?.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (product?._id?.toLowerCase().includes(searchTerm.toLowerCase()))
+  const columns = useMemo(
+    () => [
+      {
+        key: "images",
+        label: "Image",
+        render: (images: string[]) => (
+          <div className="h-12 w-12 overflow-hidden rounded-xl border bg-gray-100 shadow-sm dark:border-white/10">
+            <img
+              src={getImageUrl(images?.[0])}
+              alt="product"
+              className="h-full w-full object-cover"
+              onError={(event) => {
+                const image = event.currentTarget as HTMLImageElement;
+                image.src = "/no-image.png";
+                image.onerror = null;
+              }}
+            />
+          </div>
+        ),
+      },
+      {
+        key: "_id",
+        label: "ID",
+        render: (id: string) => (
+          <span className="font-mono text-[10px] text-gray-400">#{id?.slice(-6).toUpperCase()}</span>
+        ),
+      },
+      { key: "name", label: "Product Name" },
+      { key: "category", label: "Category" },
+      {
+        key: "price",
+        label: "Price",
+        render: (price: string) => (
+          <span className="font-bold text-gray-900 dark:text-white">Tk {Number(price || 0).toLocaleString()}</span>
+        ),
+      },
+      {
+        key: "stock",
+        label: "Stock",
+        render: (stock: number) => (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-bold ${
+              stock < 10 ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-600"
+            }`}
+          >
+            {stock} in stock
+          </span>
+        ),
+      },
+    ],
+    []
   );
 
-  // 3. Table Columns Definition
-  const columns = [
-    { 
-      key: "images", 
-      label: "Image", 
-      render: (images: string[]) => (
-        <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 border dark:border-white/10 shadow-sm">
-          <img 
-            src={getImageUrl(images?.[0])} 
-            alt="product" 
-            className="w-full h-full object-cover" 
-            onError={(e) => {
-              e.target.src = '/no-image.png'; // আপনার লোকাল ইমেজের পাথ
-              e.target.onerror = null; // লুপ বন্ধ করার জন্য
-            }}
-          />
-        </div>
-      )
-    },
-    { 
-      key: "_id", 
-      label: "ID", 
-      render: (id: string) => <span className="text-[10px] font-mono text-gray-400">#{id?.slice(-6).toUpperCase()}</span> 
-    },
-    { key: "name", label: "Product Name" },
-    { key: "category", label: "Category" },
-    { 
-      key: "price", 
-      label: "Price",
-      render: (price: number) => <span className="font-bold text-gray-900 dark:text-white">৳{Number(price).toLocaleString()}</span>
-    },
-    { 
-      key: "stock", 
-      label: "Stock",
-      render: (stock: number) => (
-        <span className={`px-3 py-1 rounded-full text-xs font-bold ${stock < 10 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
-          {stock} in stock
-        </span>
-      )
-    },
-  ];
-
-  // 4. Save/Update Logic
   const handleSaveProduct = async (formData: FormData) => {
     try {
       setIsSaving(true);
-      let res;
-      
+      let response;
+
       if (editingProduct) {
-        res = await productService.update(editingProduct._id, formData);
+        response = await productService.update(editingProduct._id, formData);
       } else {
-        res = await productService.create(formData);
+        response = await productService.create(formData);
       }
 
-      if (res.success) {
-        alert(`✅ Product ${editingProduct ? "updated" : "added"} successfully!`);
+      if (response?.success) {
         setIsModalOpen(false);
         setEditingProduct(null);
-        fetchProducts(); // Refresh list
+        await fetchProducts();
       }
     } catch (error: any) {
       console.error("Save Error:", error);
-      const msg = error.response?.data?.message || error.message || "Failed to save product";
-      alert("❌ " + msg);
+      const message = error?.response?.data?.message || error?.message || "Failed to save product";
+      alert(message);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 5. Delete Logic
-  const handleDelete = async (product: any) => {
-    if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
-      try {
-        const res = await productService.delete(product._id);
-        if(res.success) {
-          setProducts(prev => prev.filter(p => p._id !== product._id));
-        }
-      } catch (error) {
-        alert("Could not delete product!");
+  const handleDelete = async (product: Product) => {
+    if (!confirm(`Are you sure you want to delete "${product.name}"?`)) return;
+
+    try {
+      const response = await productService.delete(product._id);
+      if (!response?.success) return;
+
+      if (products.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        await fetchProducts();
       }
+    } catch {
+      alert("Could not delete product!");
     }
   };
 
   return (
-    <div className="space-y-8 max-w-[1400px] mx-auto p-4 md:p-8 min-h-screen">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border dark:border-gray-800 shadow-sm">
+    <div className="mx-auto min-h-screen max-w-[1400px] space-y-8 p-4 md:p-8">
+      <div className="flex flex-col gap-6 rounded-[2.5rem] border bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Products</h1>
-          <p className="text-gray-500 font-medium mt-1 uppercase text-xs tracking-widest">Inventory Management System</p>
+          <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white">Products</h1>
+          <p className="mt-1 text-xs font-medium uppercase tracking-widest text-gray-500">
+            Inventory Management System
+          </p>
         </div>
 
-        <button 
-          onClick={() => { 
-            setEditingProduct(null); // নতুন প্রোডাক্টের জন্য এডিটিং স্টেট ক্লিয়ার
-            setIsModalOpen(true); 
+        <button
+          onClick={() => {
+            setEditingProduct(null);
+            setIsModalOpen(true);
           }}
           disabled={loading || isSaving}
-          className="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-blue-500/20 active:scale-95"
+          className="flex items-center justify-center gap-3 rounded-2xl bg-blue-600 px-8 py-4 font-bold text-white shadow-xl shadow-blue-500/20 transition-all active:scale-95 hover:bg-blue-700 disabled:bg-gray-300"
         >
           {isSaving ? <Loader2 className="animate-spin" size={22} /> : <Plus size={22} strokeWidth={3} />}
           Add Product
         </button>
       </div>
 
-      {/* Search & Utility */}
-      <div className="relative group">
+      <div className="group relative">
         <input
           type="text"
           placeholder="Search by product name or unique ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 focus:border-blue-500 pl-14 py-5 rounded-[2rem] text-sm focus:outline-none transition-all shadow-sm group-hover:border-gray-200 dark:group-hover:border-gray-700"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          className="w-full rounded-[2rem] border-2 border-gray-100 bg-white py-5 pl-14 text-sm shadow-sm transition-all group-hover:border-gray-200 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:group-hover:border-gray-700"
         />
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-hover:text-blue-500" size={20} />
       </div>
 
-      {/* Main Table Content */}
-      <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border dark:border-gray-800 overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 text-gray-400">
-            <Loader2 className="animate-spin text-blue-500 mb-4" size={48} />
-            <p className="font-bold uppercase tracking-widest text-xs">Syncing Database...</p>
-          </div>
-        ) : (
-          <DataTable 
-            title={`Store Inventory (${filteredProducts.length})`}
-            data={filteredProducts}
-            columns={columns}
-            onEdit={(p: any) => { 
-              setEditingProduct(p); 
-              setIsModalOpen(true); 
-            }}
-            onDelete={handleDelete}
-          />
-        )}
-      </div>
+      <DataTable
+        title={`Store Inventory (${pagination.total})`}
+        data={products}
+        columns={columns}
+        loading={loading}
+        emptyMessage="No products found."
+        onEdit={(product: Product) => {
+          setEditingProduct(product);
+          setIsModalOpen(true);
+        }}
+        onDelete={handleDelete}
+        pagination={{
+          ...pagination,
+          pageSizeOptions: PAGE_SIZES,
+          onPageChange: (nextPage) => setPage(nextPage),
+          onPageSizeChange: (size) => {
+            setLimit(size);
+            setPage(1);
+          },
+        }}
+      />
 
-      {/* Product Entry Modal */}
-      {isModalOpen && (
-        <ProductModal 
+      {isModalOpen ? (
+        <ProductModal
           isOpen={isModalOpen}
           onClose={() => {
             setIsModalOpen(false);
@@ -189,9 +277,9 @@ export default function ProductsPage() {
           }}
           product={editingProduct}
           onSave={handleSaveProduct}
-          isLoading={isSaving} 
+          isLoading={isSaving}
         />
-      )}
+      ) : null}
     </div>
   );
 }

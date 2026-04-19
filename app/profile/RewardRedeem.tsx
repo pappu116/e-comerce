@@ -8,7 +8,7 @@ export default function RewardRedeem() {
   const [isHovered, setIsHovered] = useState(false);
 
   const rewards = [
-    { id: 1, title: "৳500 Discount", cost: 1000, icon: Gift, color: "text-blue-400", bg: "bg-blue-500/10" },
+    { id: 1, title: "$500 Discount", cost: 1000, icon: Gift, color: "text-blue-400", bg: "bg-blue-500/10" },
     { id: 2, title: "Free Shipping", cost: 500, icon: ShoppingBag, color: "text-emerald-400", bg: "bg-emerald-500/10" },
     { id: 3, title: "Premium Bag", cost: 2500, icon: Trophy, color: "text-amber-400", bg: "bg-amber-500/10" },
   ];

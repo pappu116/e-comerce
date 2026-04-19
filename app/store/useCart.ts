@@ -1,3 +1,6 @@
+export { useCart } from "./cartStore";
+
+/*
 // // app/store/useCart.ts
 // import { create } from 'zustand'
 
@@ -133,3 +136,4 @@ export const useCart = create(
     }
   )
 );
+*/

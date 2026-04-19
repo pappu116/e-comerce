@@ -1,130 +1,131 @@
-
-
 "use client";
-import { Heart, ShoppingBag, Trash2, Star } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useWishlist } from "@/app/store/wishlistStore"; 
+import { Heart, ShoppingCart, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useWishlist } from "@/app/store/wishlistStore";
 import { useCart } from "@/app/store/cartStore";
-import { useEffect } from "react";
 import { useAuth } from "@/app/store/authStore";
+import { getImageUrl } from "@/app/lib/apiClient";
 
 export default function WishlistSection() {
-  const { wishlist, removeFromWishlist, hydrateWishlist } = useWishlist();
-  const { addToCart } = useCart() as any;
+  const { wishlist, hydrateWishlist, removeFromWishlist } = useWishlist();
+  const { addToCart } = useCart();
   const { isLoggedIn } = useAuth();
+  const [busyId, setBusyId] = useState<string>("");
 
   useEffect(() => {
-    if (isLoggedIn) {
-      hydrateWishlist();
-    }
+    if (!isLoggedIn) return;
+    hydrateWishlist();
   }, [isLoggedIn, hydrateWishlist]);
 
+  const handleMoveToCart = async (id: string) => {
+    const item = wishlist.find((entry) => entry.id === id);
+    if (!item) return;
+
+    setBusyId(id);
+    await addToCart(item, 1);
+    await removeFromWishlist(id);
+    setBusyId("");
+  };
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 px-2 sm:px-0">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-8">
-        <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase italic">My Wishlist</h3>
-        <p className="text-indigo-400 font-bold text-xs sm:text-sm bg-indigo-500/10 px-4 py-1.5 rounded-full border border-indigo-500/20">
-          {wishlist.length} {wishlist.length <= 1 ? "Item" : "Items"} Saved
-        </p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-black tracking-tight">My Wishlist</h2>
+          <p className="text-xs text-muted-foreground">
+            {wishlist.length} item{wishlist.length === 1 ? "" : "s"} saved
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/shop">Continue Shopping</Link>
+        </Button>
       </div>
 
-      {/* Grid Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <AnimatePresence mode="popLayout">
-          {wishlist.map((item) => (
-            <motion.div 
-              key={item.id} 
-              layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="p-4 sm:p-6 bg-white/[0.03] border border-white/10 rounded-[2rem] sm:rounded-[2.5rem] group hover:bg-white/[0.07] hover:border-indigo-500/30 transition-all duration-300 relative overflow-hidden shadow-2xl"
-            >
-              {/* Card Content Layout */}
-              <div className="flex gap-4 sm:gap-6 items-center">
-                {/* Image Section - Fixed size for mobile, dynamic for tablet */}
-                <Link href={`/product/${item.id}`} className="shrink-0">
-                  <div className="w-20 h-20 sm:w-28 sm:h-28 bg-zinc-900 rounded-[1.5rem] sm:rounded-[2rem] border border-white/5 relative overflow-hidden group-hover:border-indigo-500/30 transition-colors">
-                    {item.image ? (
-                      <Image 
-                        src={item.image} 
-                        alt={item.name} 
-                        fill 
-                        className="object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-slate-600 font-bold text-[10px] uppercase">No Img</div>
-                    )}
-                  </div>
-                </Link>
-
-                {/* Details Section */}
-                <div className="flex-1 min-w-0">
-                   <Link href={`/product/${item.id}`}>
-                      <h5 className="font-black text-base sm:text-xl text-slate-100 group-hover:text-indigo-400 transition-colors truncate">
-                        {item.name}
-                      </h5>
-                   </Link>
-                   
-                   <div className="flex items-center gap-2 mt-1 sm:mt-2">
-                     <div className="flex items-center gap-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/10">
-                       <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                       <span className="text-[10px] font-black text-yellow-500">{item.rating || "4.5"}</span>
-                     </div>
-                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:inline">Verified Review</span>
-                   </div>
-
-                   <p className="text-white font-black mt-2 sm:mt-3 text-lg sm:text-2xl flex items-baseline gap-1">
-                      <span className="text-indigo-400 text-xs sm:text-sm font-bold">৳</span>
-                      {item.price}
-                   </p>
-                </div>
-              </div>
-
-              {/* Action Buttons - Stacked on tiny mobile, row on larger */}
-              <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/5">
-                <button 
-                  onClick={() => addToCart(item)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-4 bg-indigo-600 text-white rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-500 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all active:scale-95"
-                >
-                  <ShoppingBag size={14} className="sm:w-4 sm:h-4" /> Add To Cart
-                </button>
-
-                <button 
-                  onClick={() => removeFromWishlist(item.id)}
-                  className="p-3 sm:p-4 bg-red-500/5 text-red-500 border border-red-500/10 rounded-xl sm:rounded-2xl hover:bg-red-500 hover:text-white transition-all active:scale-95 group/del"
-                  title="Remove"
-                >
-                  <Trash2 size={18} className="sm:w-5 sm:h-5" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {/* Empty State */}
-      {wishlist.length === 0 && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="py-20 sm:py-32 bg-white/[0.02] border border-dashed border-white/10 rounded-[2.5rem] sm:rounded-[4rem] text-center flex flex-col items-center justify-center px-4"
-        >
-            <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/5">
-               <Heart size={32} className="text-slate-800 animate-pulse" />
+      {!wishlist.length ? (
+        <Card className="border border-border/70">
+          <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <div className="rounded-full bg-indigo-500/10 p-3 text-indigo-500">
+              <Heart size={22} />
             </div>
-            <h4 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase italic tracking-tighter">Wishlist Empty</h4>
-            <p className="text-slate-500 font-bold text-xs sm:text-sm max-w-[250px] sm:max-w-none">
-              Explore our collections and save your favorite items for later!
+            <p className="text-sm font-medium">Your wishlist is empty.</p>
+            <p className="text-xs text-muted-foreground">
+              Save products you love and purchase later.
             </p>
-            <Link href="/shop" className="mt-8 px-8 py-4 bg-white/5 border border-white/10 rounded-full text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all">
-               Start Shopping
-            </Link>
-        </motion.div>
+            <Button asChild className="mt-2">
+              <Link href="/shop">Browse Products</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {wishlist.map((item) => {
+            const productId = item.id || item._id;
+            const image = getImageUrl(item.image || item.images?.[0] || "");
+            const isBusy = busyId === productId;
+            return (
+              <Card key={productId} className="border border-border/70">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base leading-snug">{item.name}</CardTitle>
+                  <CardDescription>{item.category || "General"}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Link
+                    href={`/product/${productId}`}
+                    className="relative block aspect-[4/3] overflow-hidden rounded-xl bg-muted"
+                  >
+                    <Image
+                      src={image}
+                      alt={item.name}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </Link>
+                  <div className="flex items-center justify-between">
+                    <p className="text-lg font-black text-indigo-600">
+                      Tk {Number(item.discountPrice || item.price || 0).toLocaleString()}
+                    </p>
+                    {item.discountPrice ? (
+                      <p className="text-xs text-muted-foreground line-through">
+                        Tk {Number(item.price || 0).toLocaleString()}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      disabled={isBusy}
+                      onClick={() => handleMoveToCart(productId)}
+                    >
+                      <ShoppingCart size={14} />
+                      {isBusy ? "Updating..." : "Move to Cart"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => removeFromWishlist(productId)}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 }

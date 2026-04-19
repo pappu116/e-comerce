@@ -8,6 +8,7 @@ export interface WishlistItem {
   name: string;
   price: number;
   discountPrice?: number;
+  rating?: number;
   image: string;
   images: string[];
   category?: string;
@@ -41,6 +42,7 @@ const normalizeWishlistItem = (raw: any): WishlistItem | null => {
     name: source?.name || "Product",
     price: Number(source?.price || 0),
     discountPrice: Number(source?.discountPrice || 0) || undefined,
+    rating: Number(source?.rating || 0) || undefined,
     image,
     images: Array.isArray(source?.images) ? source.images : image ? [image] : [],
     category: source?.category,

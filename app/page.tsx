@@ -5,8 +5,12 @@ import ProductCard from "@/app/components/product-card"
 // ১. Async Function to fetch products
 async function getProducts() {
   try {
-    const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
-    const normalizedApiBase = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
+    const apiBase = (
+      process.env.NEXT_PUBLIC_API_URL ||
+      process.env.API_URL ||
+      "http://localhost:5000"
+    ).replace(/\/+$/, "");
+    const normalizedApiBase = apiBase.endsWith("/api") ? apiBase : `${apiBase}/api`;
     const res = await fetch(`${normalizedApiBase}/products`, {
       cache: 'no-store', // Fresh data anar jonno
     });

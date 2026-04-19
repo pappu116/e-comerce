@@ -3,12 +3,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ShoppingCart, User, LogOut, Menu, X } from "lucide-react"; 
 import { ThemeToggle } from "./theme-toggle";
 import { useCart } from "@/app/store/cartStore";
 import { useAuth } from "@/app/store/authStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "@/app/store/wishlistStore";
+
 
 export default function Navbar() {
   const cartItemsCount = useCart((state) => state.items.length);
@@ -68,7 +70,7 @@ export default function Navbar() {
             <div className="flex items-center gap-2">
               {isLoggedIn ? (
                 <div className="flex items-center gap-2 md:gap-3">
-                  <Link 
+                  {/* <Link 
                     href="/profile" 
                     className="flex items-center gap-2 p-1 md:pr-4 bg-accent/50 hover:bg-accent rounded-full transition-all border border-border group"
                   >
@@ -80,6 +82,35 @@ export default function Navbar() {
                        <p className="text-sm font-bold text-foreground">
                         {user?.name?.split(' ')[0] || "User"}
                        </p>
+                    </div>
+                  </Link> */}
+                  <Link 
+                    href="/profile" 
+                    className="flex items-center gap-2 p-1 md:pr-4 bg-accent/50 hover:bg-accent rounded-full transition-all border border-border group"
+                  >
+                    {/* ইমেজ সেকশন */}
+                    <div className="relative w-8 h-8 md:w-9 md:h-9 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform overflow-hidden">
+                      {user?.profileImage ? (
+                        <Image 
+                          src={user.profileImage} // এখানে নিশ্চিত করুন নামটা 'profileImage' ই আছে
+                          alt={user.name || "User"} 
+                          fill
+                          className="object-cover"
+                          sizes="36px"
+                        />
+                      ) : (
+                        <User size={18} />
+                      )}
+                    </div>
+
+                    {/* টেক্সট সেকশন */}
+                    <div className="hidden md:block leading-none">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">
+                        Welcome
+                      </p>
+                      <p className="text-sm font-bold text-foreground">
+                        {user?.name?.split(' ')[0] || "User"}
+                      </p>
                     </div>
                   </Link>
 

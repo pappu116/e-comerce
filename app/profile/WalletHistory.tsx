@@ -23,9 +23,9 @@ const chartData = [
 
 // ট্রানজেকশন হিস্ট্রি ডাটা
 const transactions = [
-  { id: 1, type: "deposit", method: "bKash", ref: "TXN-9921", amount: "+৳5,000", date: "Today, 10:30 AM" },
-  { id: 2, type: "expense", method: "Order #882", ref: "Shopping", amount: "-৳1,250", date: "Yesterday" },
-  { id: 3, type: "deposit", method: "Nagad", ref: "TXN-1102", amount: "+৳2,000", date: "25 Mar" },
+  { id: 1, type: "deposit", method: "bKash", ref: "TXN-9921", amount: "+$5,000", date: "Today, 10:30 AM" },
+  { id: 2, type: "expense", method: "Order #882", ref: "Shopping", amount: "-$1,250", date: "Yesterday" },
+  { id: 3, type: "deposit", method: "Nagad", ref: "TXN-1102", amount: "+$2,000", date: "25 Mar" },
 ];
 
 export default function WalletHistory() {

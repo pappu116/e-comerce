@@ -5,9 +5,16 @@ type RetryRequestConfig = InternalAxiosRequestConfig & {
   skipAuthRefresh?: boolean;
 };
 
-const RAW_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, "");
-const API_BASE_URL = RAW_BASE_URL.endsWith("/api") ? RAW_BASE_URL : `${RAW_BASE_URL}/api`;
-const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+const DEFAULT_BACKEND_BASE_URL = "http://localhost:5000";
+const RAW_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const API_BASE_URL = RAW_BASE_URL
+  ? RAW_BASE_URL.endsWith("/api")
+    ? RAW_BASE_URL
+    : `${RAW_BASE_URL}/api`
+  : `${DEFAULT_BACKEND_BASE_URL}/api`;
+const BACKEND_BASE_URL = RAW_BASE_URL
+  ? (RAW_BASE_URL.endsWith("/api") ? RAW_BASE_URL.replace(/\/api\/?$/, "") : RAW_BASE_URL)
+  : DEFAULT_BACKEND_BASE_URL;
 
 const API_CLIENT = axios.create({
   baseURL: API_BASE_URL,
@@ -27,12 +34,40 @@ const onRefreshed = (token: string | null) => {
   refreshSubscribers = [];
 };
 
+const clearClientAuth = () => {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("token");
+  localStorage.removeItem("auth-storage");
+};
+
+const resolveAccessToken = () => {
+  if (typeof window === "undefined") return "";
+
+  const directToken = localStorage.getItem("token");
+  if (directToken) {
+    return directToken.replace(/^['"]|['"]$/g, "").trim();
+  }
+
+  const persisted = localStorage.getItem("auth-storage");
+  if (!persisted) return "";
+
+  try {
+    const parsed = JSON.parse(persisted);
+    const legacyToken = parsed?.state?.token || parsed?.token;
+    if (!legacyToken) return "";
+    return String(legacyToken).replace(/^['"]|['"]$/g, "").trim();
+  } catch {
+    return "";
+  }
+};
+
 API_CLIENT.interceptors.request.use((config: RetryRequestConfig) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    if (token && !config.headers.Authorization) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  const token = resolveAccessToken();
+  if (!config.headers) {
+    config.headers = {} as RetryRequestConfig["headers"];
+  }
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -45,7 +80,8 @@ API_CLIENT.interceptors.response.use(
     const isAuthCall =
       originalRequest.url?.includes("/auth/login") ||
       originalRequest.url?.includes("/auth/register") ||
-      originalRequest.url?.includes("/auth/refresh");
+      originalRequest.url?.includes("/auth/refresh") ||
+      originalRequest.url?.includes("/auth/logout");
 
     if (status !== 401 || originalRequest.skipAuthRefresh || originalRequest._retry || isAuthCall) {
       return Promise.reject(error);
@@ -59,6 +95,7 @@ API_CLIENT.interceptors.response.use(
             return;
           }
 
+          originalRequest.headers = originalRequest.headers || {};
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           resolve(API_CLIENT(originalRequest));
         });
@@ -85,13 +122,15 @@ API_CLIENT.interceptors.response.use(
       }
 
       onRefreshed(newToken);
+      originalRequest.headers = originalRequest.headers || {};
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return API_CLIENT(originalRequest);
     } catch (refreshError) {
       onRefreshed(null);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-        localStorage.removeItem("auth-storage");
+      clearClientAuth();
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${redirect}`;
       }
       return Promise.reject(refreshError);
     } finally {
@@ -118,6 +157,44 @@ export const authService = {
   },
   getMe: async () => {
     const response = await API_CLIENT.get("/auth/me");
+    return response.data;
+  },
+  updateMe: async (payload: {
+    name?: string;
+    phone?: string;
+    address?: string;
+    profileImage?: string;
+    addresses?: Array<{
+      id?: string;
+      type?: "Home" | "Office" | "Other";
+      label: string;
+      fullName: string;
+      phone: string;
+      addressLine: string;
+      city: string;
+      area?: string;
+      postalCode?: string;
+      country?: string;
+      isDefault?: boolean;
+    }>;
+    notificationPreferences?: {
+      emailOrders?: boolean;
+      emailPromotions?: boolean;
+      smsAlerts?: boolean;
+      pushAlerts?: boolean;
+    };
+  }) => {
+    const response = await API_CLIENT.put("/auth/me", payload);
+    return response.data;
+  },
+  uploadAvatar: async (formData: FormData) => {
+    const response = await API_CLIENT.put("/auth/me/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+  changePassword: async (payload: { currentPassword: string; newPassword: string }) => {
+    const response = await API_CLIENT.put("/auth/change-password", payload);
     return response.data;
   },
   refresh: async () => {
@@ -169,6 +246,13 @@ export const productService = {
   },
 };
 
+export const adminProductService = {
+  getAll: async (params?: { page?: number; limit?: number; search?: string }) => {
+    const response = await API_CLIENT.get("/admin/products/all", { params });
+    return response.data;
+  },
+};
+
 export const cartService = {
   get: async () => {
     const response = await API_CLIENT.get("/cart");
@@ -213,9 +297,13 @@ export const orderService = {
     const response = await API_CLIENT.put(`/orders/${id}/cancel`);
     return response.data;
   },
-  getAll: async (status?: string) => {
+  getAll: async (
+    params?: string | { status?: string; page?: number; limit?: number; search?: string }
+  ) => {
+    const resolvedParams =
+      typeof params === "string" ? (params ? { status: params } : undefined) : params;
     const response = await API_CLIENT.get("/admin/orders", {
-      params: status ? { status } : undefined,
+      params: resolvedParams,
     });
     return response.data;
   },
@@ -228,7 +316,7 @@ export const orderService = {
     return response.data;
   },
   getStats: async () => {
-    const response = await API_CLIENT.get("/admin/dashboard");
+    const response = await API_CLIENT.get("/admin/stats");
     return response.data;
   },
 };
@@ -287,8 +375,8 @@ export const securityService = {
 };
 
 export const adminService = {
-  getAllUsers: async () => {
-    const response = await API_CLIENT.get("/admin/users");
+  getAllUsers: async (params?: { page?: number; limit?: number; search?: string; status?: string }) => {
+    const response = await API_CLIENT.get("/admin/users", { params });
     return response.data;
   },
   updateUser: async (id: string, payload: any) => {
@@ -313,7 +401,7 @@ export const getImageUrl = (path?: string): string => {
   if (!path) return "https://via.placeholder.com/400x400?text=No+Image";
   if (path.startsWith("http")) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${BACKEND_BASE_URL}${normalizedPath}`;
+  return BACKEND_BASE_URL ? `${BACKEND_BASE_URL}${normalizedPath}` : normalizedPath;
 };
 
 export default API_CLIENT;

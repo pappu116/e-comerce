@@ -1,50 +1,100 @@
 
 "use client";
-import { ShoppingBag, Wallet, Truck, Star, ArrowUpRight } from "lucide-react";
+import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, Heart, MapPin, ShoppingBag, Truck } from "lucide-react";
 import { motion } from "framer-motion";
+import { orderService } from "@/app/lib/apiClient";
+import { useAuth } from "@/app/store/authStore";
+import { useWishlist } from "@/app/store/wishlistStore";
+
+type StatCard = {
+  id: string;
+  label: string;
+  value: string;
+  icon: ComponentType<{ size?: number }>;
+  color: string;
+  bg: string;
+  border: string;
+  description: string;
+};
 
 export default function QuickStats({ setActiveTab }: { setActiveTab: (id: string) => void }) {
-  const stats = [
-    { 
-      id: "orders", 
-      label: "Total Orders", 
-      value: "12", 
-      icon: ShoppingBag, 
-      color: "text-blue-400", 
-      bg: "bg-blue-500/10", 
+  const { isLoggedIn, user } = useAuth();
+  const { wishlist, hydrateWishlist } = useWishlist();
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setOrders([]);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        const response = await orderService.getMyOrders();
+        setOrders(Array.isArray(response?.orders) ? response.orders : []);
+      } catch {
+        setOrders([]);
+      }
+    };
+
+    fetchOrders();
+    hydrateWishlist();
+  }, [isLoggedIn, hydrateWishlist]);
+
+  const totalSpent = useMemo(
+    () => orders.reduce((sum, order) => sum + Number(order?.totalAmount || order?.subTotal || 0), 0),
+    [orders]
+  );
+
+  const processingOrders = useMemo(
+    () =>
+      orders.filter((order) =>
+        ["pending", "processing", "shipped"].includes(String(order?.status || "").toLowerCase())
+      ).length,
+    [orders]
+  );
+
+  const stats: StatCard[] = [
+    {
+      id: "My Orders",
+      label: "Total Orders",
+      value: String(orders.length).padStart(2, "0"),
+      icon: ShoppingBag,
+      color: "text-blue-400",
+      bg: "bg-blue-500/10",
       border: "border-blue-500/20",
-      description: "View history"
+      description: "View history",
     },
     { 
-      id: "wallet",
-      label: "Wallet Balance", 
-      value: "৳2,450", 
-      icon: Wallet, 
-      color: "text-emerald-400", 
-      bg: "bg-emerald-500/10", 
+      id: "My Orders",
+      label: "Total Spent",
+      value: `Tk ${totalSpent.toLocaleString()}`,
+      icon: Truck,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
       border: "border-emerald-500/20",
-      description: "Manage funds"
+      description: "Order value",
     },
     { 
-      // এখানে ID পরিবর্তন করে 'processing' করা হলো
-      id: "processing", 
-      label: "Processing", 
-      value: "02", 
-      icon: Truck, 
-      color: "text-amber-400", 
-      bg: "bg-amber-500/10", 
+      id: "Addresses",
+      label: "Saved Addresses",
+      value: String(Array.isArray(user?.addresses) ? user.addresses.length : 0).padStart(2, "0"),
+      icon: MapPin,
+      color: "text-amber-400",
+      bg: "bg-amber-500/10",
       border: "border-amber-500/20",
-      description: "Track status"
+      description: "Manage shipping",
     },
     { 
-      id: "rewards",
-      label: "Reward Points", 
-      value: "450", 
-      icon: Star, 
-      color: "text-purple-400", 
-      bg: "bg-purple-500/10", 
-      border: "border-purple-500/20",
-      description: "Redeem now"
+      id: "Wishlist",
+      label: "Wishlist Items",
+      value: String(wishlist.length).padStart(2, "0"),
+      icon: Heart,
+      color: "text-fuchsia-400",
+      bg: "bg-fuchsia-500/10",
+      border: "border-fuchsia-500/20",
+      description: processingOrders > 0 ? `${processingOrders} shipping` : "Save products",
     },
   ];
 
@@ -52,7 +102,7 @@ export default function QuickStats({ setActiveTab }: { setActiveTab: (id: string
     <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
       {stats.map((stat, i) => (
         <button 
-          key={i} 
+          key={stat.label}
           onClick={() => setActiveTab(stat.id)} 
           className="block w-full text-left group"
         >

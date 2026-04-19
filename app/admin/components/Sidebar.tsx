@@ -1,18 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { type ComponentType, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, Package, ShoppingCart, Users, Settings, X, 
-  BarChart3, ShieldCheck, Mail, CreditCard, 
-  Smartphone, Database, LogOut
+  BarChart3, ShieldCheck, CreditCard, 
+  Smartphone, LogOut
 } from 'lucide-react';
 import { orderService } from '@/app/lib/apiClient'; 
 import { useAuth } from '@/app/store/authStore'; // ✅ Zustand Store ইমপোর্ট করুন
 
 // ১. মেনু স্ট্রাকচার
-const menuGroups = [
+type BadgeKey = "orderCount";
+type MenuItem = {
+  href: string;
+  label: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+  badgeKey?: BadgeKey;
+};
+type MenuGroup = {
+  group: string;
+  items: MenuItem[];
+};
+
+const menuGroups: MenuGroup[] = [
   {
     group: "Overview",
     items: [
@@ -39,9 +51,7 @@ const menuGroups = [
   {
     group: "System Control",
     items: [
-      { href: '/admin/logs', label: 'System Logs', icon: Database },
       { href: '/admin/settings', label: 'Settings', icon: Settings },
-      { href: '/admin/messages', label: 'Messages', icon: Mail, badgeKey: "unreadMsgs" },
     ]
   }
 ];
@@ -61,7 +71,6 @@ export default function Sidebar({
 
   const [dynamicStats, setDynamicStats] = useState({
     orderCount: 0,
-    unreadMsgs: 3, // ডামি ডাটা
     serverLoad: 0
   });
 
@@ -78,12 +87,19 @@ export default function Sidebar({
     const fetchSidebarData = async () => {
       try {
         const orderRes = await orderService.getAll();
-        const count = Number(orderRes?.count || orderRes?.orders?.length || 0);
+        const orders = Array.isArray(orderRes?.orders) ? orderRes.orders : [];
+        const count = Number(orderRes?.count || orders.length || 0);
+        const attentionRequired = orders.filter((order: any) =>
+          ["pending", "processing"].includes(String(order?.status || "").toLowerCase())
+        ).length;
+        const serverLoad = count > 0
+          ? Math.min(95, Math.max(8, Math.round((attentionRequired / count) * 100)))
+          : 8;
 
         setDynamicStats(prev => ({
           ...prev,
           orderCount: count,
-          serverLoad: Math.floor(Math.random() * (40 - 20) + 20)
+          serverLoad
         }));
       } catch (error) {
         console.error("Sidebar stats error:", error);
@@ -131,9 +147,11 @@ export default function Sidebar({
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = pathname === item.href;
-                  // @ts-ignore
-                  const badgeValue = item.badgeKey ? dynamicStats[item.badgeKey] : 0;
+                  const isActive =
+                    item.href === '/admin'
+                      ? pathname === '/admin'
+                      : pathname.startsWith(item.href);
+                  const badgeValue = item.badgeKey ? dynamicStats[item.badgeKey as BadgeKey] : 0;
 
                   return (
                     <Link

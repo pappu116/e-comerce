@@ -1,80 +1,102 @@
-import { productService, getImageUrl } from "@/app/lib/apiClient";
-import { notFound } from "next/navigation";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import AddToCartButton from "@/app/components/AddToCartButton";
 import ReviewsPanel from "./ReviewsPanel";
+import { getImageUrl } from "@/app/lib/apiClient";
+
+const getApiBase = () => {
+  const rawBase =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.API_URL ||
+    "http://localhost:5000";
+  const normalized = rawBase.replace(/\/+$/, "");
+  return normalized.endsWith("/api") ? normalized : `${normalized}/api`;
+};
 
 export default async function ProductPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = params;
+  const { id } = await params;
+  const productId = String(id || "").trim();
 
-  if (!id || id === "undefined") notFound();
+  if (!productId || productId === "undefined") {
+    notFound();
+  }
 
-  const response = await productService.getById(id);
-  const product = response?.product;
+  let product: any = null;
 
-  if (!product) notFound();
+  try {
+    const response = await fetch(`${getApiBase()}/products/${productId}`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      notFound();
+    }
+
+    const data = await response.json();
+    product = data?.product || null;
+  } catch {
+    product = null;
+  }
+
+  if (!product) {
+    notFound();
+  }
 
   const imageUrl = getImageUrl(product.images?.[0]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#020617] transition-colors duration-300">
-      <div className="container mx-auto py-20 px-4">
-        <div className="grid md:grid-cols-2 gap-12">
-
-          {/* Image Section */}
-          <div className="bg-zinc-100 dark:bg-zinc-900 rounded-3xl aspect-square overflow-hidden border dark:border-white/10 relative">
-            {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt={product.name ?? "Product image"}
-                fill
-                className="object-cover"
-                priority // পেজ লোড স্পিড বাড়ানোর জন্য
-                unoptimized
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-zinc-400">
-                No Image Available
-              </div>
-            )}
+    <div className="min-h-screen bg-white py-10 dark:bg-[#020617] md:py-16">
+      <div className="container mx-auto px-4">
+        <div className="grid gap-8 md:grid-cols-2 md:gap-12">
+          <div className="relative aspect-square overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900">
+            <Image
+              src={imageUrl}
+              alt={product.name || "Product image"}
+              fill
+              unoptimized
+              priority
+              className="object-cover"
+            />
           </div>
 
-          {/* Details Section */}
-          <div className="flex flex-col justify-center space-y-4">
-            <span className="text-teal-500 font-bold uppercase tracking-wider text-sm">
+          <div className="flex flex-col justify-center gap-4">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-500">
               {product.category || "General"}
-            </span>
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white uppercase">
+            </p>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white md:text-4xl">
               {product.name}
             </h1>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl text-indigo-600 dark:text-indigo-400 font-bold">
-                ৳{product.price}
-              </span>
-              <span className={`text-xs px-2 py-1 rounded ${
-                product.stock > 0
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}>
-                {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
+            <div className="flex items-center gap-3">
+              <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400">
+                Tk {Number(product.price || 0).toLocaleString()}
+              </p>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  Number(product.stock || 0) > 0
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
+                    : "bg-rose-500/15 text-rose-600 dark:text-rose-300"
+                }`}
+              >
+                {Number(product.stock || 0) > 0
+                  ? `In Stock (${Number(product.stock)})`
+                  : "Out of Stock"}
               </span>
             </div>
-            <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              {product.description}
+            <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+              {product.description || "No description available."}
             </p>
-            <div className="pt-4">
+            <div className="pt-2">
               <AddToCartButton product={product} />
             </div>
           </div>
-
         </div>
 
         <ReviewsPanel
-          productId={id}
+          productId={productId}
           initialRating={Number(product.ratings || 0)}
           initialCount={Number(product.numOfReviews || 0)}
         />

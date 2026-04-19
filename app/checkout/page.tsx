@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -154,10 +154,10 @@ export default function CheckoutPage() {
           <h3 className="text-xl font-black text-slate-900 dark:text-white mb-5">Order Summary</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span>Items</span><span>{items.length}</span></div>
-            <div className="flex justify-between"><span>Subtotal</span><span>৳{subtotal}</span></div>
-            <div className="flex justify-between"><span>Shipping</span><span>{shippingFee === 0 ? "Free" : `৳${shippingFee}`}</span></div>
+            <div className="flex justify-between"><span>Subtotal</span><span>Tk {subtotal}</span></div>
+            <div className="flex justify-between"><span>Shipping</span><span>{shippingFee === 0 ? "Free" : `Tk ${shippingFee}`}</span></div>
             <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-slate-700 font-black text-lg">
-              <span>Total</span><span>৳{total}</span>
+              <span>Total</span><span>Tk {total}</span>
             </div>
           </div>
 
@@ -176,3 +176,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+

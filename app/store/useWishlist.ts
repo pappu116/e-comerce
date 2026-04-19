@@ -1,3 +1,6 @@
+export { useWishlist } from "./wishlistStore";
+
+/*
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -30,3 +33,4 @@ export const useWishlist = create<WishlistState>()(
     { name: "wishlist-storage" } // LocalStorage key
   )
 );
+*/

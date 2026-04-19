@@ -1,24 +1,49 @@
-// @/components/admin/AdminGuard.tsx
 "use client";
-import { useAuth } from "@/app/store/authStore";
-import { useRouter } from "next/navigation";
+
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/app/store/authStore";
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoggedIn, isHydrated } = useAuth();
   const router = useRouter();
+  const user = useAuth((state) => state.user);
+  const isLoggedIn = useAuth((state) => state.isLoggedIn);
+  const isHydrated = useAuth((state) => state.isHydrated);
+  const loading = useAuth((state) => state.loading);
+  const checkAuth = useAuth((state) => state.checkAuth);
+  const isAdmin = String(user?.role || "").toLowerCase() === "admin";
 
   useEffect(() => {
-    if (isHydrated) {
-      // যদি লগইন না থাকে অথবা রোল 'admin' না হয়
-      if (!isLoggedIn || user?.role !== 'admin') {
-        router.push("/"); // হোম পেজে বা অন্য কোথাও পাঠিয়ে দিন
-      }
+    if (!isHydrated) return;
+    const hasToken = typeof window !== "undefined" && Boolean(localStorage.getItem("token"));
+    if ((isLoggedIn && !user) || (!isLoggedIn && hasToken)) {
+      checkAuth();
     }
-  }, [isHydrated, isLoggedIn, user, router]);
+  }, [isHydrated, isLoggedIn, user, checkAuth]);
 
-  if (!isHydrated || !isLoggedIn || user?.role !== 'admin') {
-    return <div className="h-screen flex items-center justify-center">Verifying Admin...</div>;
+  useEffect(() => {
+    if (!isHydrated || loading) return;
+
+    if (!isLoggedIn) {
+      router.replace("/login?redirect=/admin");
+      return;
+    }
+
+    if (user && !isAdmin) {
+      router.replace("/profile");
+    }
+  }, [isHydrated, loading, isLoggedIn, isAdmin, user, router]);
+
+  if (!isHydrated || loading || !isLoggedIn || !isAdmin) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+          <Loader2 size={16} className="animate-spin" />
+          Verifying admin access...
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

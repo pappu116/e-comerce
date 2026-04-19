@@ -218,7 +218,7 @@
 //                 </select>
 //               </div>
 //               <div>
-//                 <label className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2 block">Price (৳)</label>
+//                 <label className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2 block">Price ($)</label>
 //                 <input
 //                   type="text"
 //                   name="price"
@@ -300,6 +300,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { X, Upload, Save, Trash2 } from 'lucide-react';
+import { getImageUrl as resolveImageUrl } from '@/app/lib/apiClient';
 
 interface Product {
   id?: string;
@@ -321,17 +322,6 @@ interface ProductModalProps {
   onSave: (formData: FormData) => void;
   isLoading?: boolean;
 }
-
-// Helper function to get full image URL
-const getImageUrl = (path: string | undefined): string => {
-  if (!path) return '';
-  // যদি ইতিমধ্যে full URL থাকে তাহলে সেটাই রিটার্ন করবে
-  if (path.startsWith('http')) return path;
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-  const backendBaseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
-  // অন্যথায় backend base URL + path
-  return `${backendBaseUrl}/${path.replace(/^\//, '')}`;
-};
 
 export default function ProductModal({ isOpen, onClose, product, onSave, isLoading = false }: ProductModalProps) {
   
@@ -373,7 +363,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isLoadi
 
         // প্রিভিউতে ইমেজ দেখানো
         if (existingImage) {
-          setImagePreview(getImageUrl(existingImage));
+          setImagePreview(resolveImageUrl(existingImage));
         } else {
           setImagePreview('');
         }
@@ -538,14 +528,14 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isLoadi
               </div>
 
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2 block">Selling Price (৳)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2 block">Selling Price ($)</label>
                 <input type="text" name="price" value={formData.price} onChange={handleChange} required className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-2xl" />
               </div>
             </div>
 
             {/* Cost Price (Buying Price) */}
             <div>
-              <label className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2 block">Cost Price / Buying Price (৳)</label>
+              <label className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2 block">Cost Price / Buying Price ($)</label>
               <input 
                 type="text" 
                 name="costPrice" 

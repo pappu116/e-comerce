@@ -15,7 +15,7 @@
 //           />
 //         </div>
 //         <h3 className="mt-4 font-semibold">{product.name}</h3>
-//         <p className="text-indigo-600 font-bold">৳{product.price}</p>
+//         <p className="text-indigo-600 font-bold">${product.price}</p>
 //       </div>
 //     </Link>
 //   )
@@ -99,11 +99,11 @@ export default function ProductCard({ product }: { product: any }) {
             <div className="flex flex-col">
               {product.discountPrice && product.discountPrice > product.price && (
                 <p className="text-[9px] text-slate-500 line-through font-bold">
-                  ৳{product.discountPrice}
+                  ${product.discountPrice}
                 </p>
               )}
               <p className="text-indigo-400 font-black text-base md:text-xl leading-none">
-                <span className="text-[10px] md:text-sm mr-0.5">৳</span>
+                <span className="text-[10px] md:text-sm mr-0.5">$</span>
                 {product.price}
               </p>
             </div>

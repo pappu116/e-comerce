@@ -19,7 +19,7 @@ export default function CartPage() {
     if (isLoggedIn) {
       router.push("/checkout"); 
     } else {
-      router.push("/login?redirect=/cart"); 
+      router.push("/login?redirect=/checkout"); 
     }
   };
 
@@ -81,7 +81,7 @@ export default function CartPage() {
                       <h2 className="text-xl font-bold text-zinc-900 dark:text-white">{item.name}</h2>
                       <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Premium Edition</p>
                     </div>
-                    <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">৳{item.price}</p>
+                    <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">${item.price}</p>
                   </div>
 
                   <div className="flex justify-between items-center mt-6">
@@ -112,14 +112,14 @@ export default function CartPage() {
               <div className="space-y-4">
                 <div className="flex justify-between text-zinc-400 font-medium">
                   <span>Subtotal</span>
-                  <span className="text-white">৳{subtotal}</span>
+                  <span className="text-white">${subtotal}</span>
                 </div>
 
                 <div className="flex justify-between items-start">
                   <span className="text-zinc-400 font-medium">Shipping</span>
                   <div className="text-right">
                     <span className={`font-bold ${shippingCharge === 0 ? "text-green-400" : "text-white"}`}>
-                      {shippingCharge === 0 ? "Free Shipping" : `৳${shippingCharge}`}
+                      {shippingCharge === 0 ? "Free Shipping" : `$${shippingCharge}`}
                     </span>
                     {subtotal >= 500 && subtotal < 1000 && (
                       <p className="text-[10px] text-green-400 font-medium tracking-wide">(50% OFF)</p>
@@ -131,7 +131,7 @@ export default function CartPage() {
 
                 <div className="flex justify-between items-center text-2xl font-black mb-10">
                   <span>Total</span>
-                  <span className="text-indigo-400">৳{finalTotal}</span>
+                  <span className="text-indigo-400">${finalTotal}</span>
                 </div>
 
                 <button 
