@@ -258,27 +258,36 @@ export const cartService = {
     const response = await API_CLIENT.get("/cart");
     return response.data;
   },
-  add: async (productId: string, quantity = 1) => {
-    const response = await API_CLIENT.post("/cart/add", { productId, quantity });
+  add: async (productId: string, quantity = 1, variantKey = "") => {
+    const response = await API_CLIENT.post("/cart/add", { productId, quantity, variantKey });
     return response.data;
   },
-  update: async (productId: string, quantity: number) => {
-    const response = await API_CLIENT.put(`/cart/update/${productId}`, { quantity });
+  update: async (productId: string, quantity: number, variantKey = "") => {
+    const response = await API_CLIENT.put(`/cart/update/${productId}`, { quantity, variantKey });
     return response.data;
   },
-  remove: async (productId: string) => {
-    const response = await API_CLIENT.delete(`/cart/remove/${productId}`);
+  remove: async (productId: string, variantKey = "") => {
+    const response = await API_CLIENT.delete(`/cart/remove/${productId}`, { data: { variantKey } });
     return response.data;
   },
   clear: async () => {
     const response = await API_CLIENT.delete("/cart/clear");
     return response.data;
   },
+  replace: async (items: Array<{ productId: string; quantity: number; variantKey?: string }>) => {
+    const response = await API_CLIENT.put("/cart/replace", { items });
+    return response.data;
+  },
 };
 
 export const orderService = {
+  quote: async (params?: { couponCode?: string; discountAmount?: number }) => {
+    const response = await API_CLIENT.get("/orders/quote", { params });
+    return response.data;
+  },
   create: async (payload: any) => {
-    const response = await API_CLIENT.post("/orders", payload);
+    const key = String(payload?.idempotencyKey || "").trim();
+    const response = await API_CLIENT.post("/orders", payload, key ? { headers: { "X-Idempotency-Key": key } } : undefined);
     return response.data;
   },
   getMyOrders: async () => {
@@ -393,6 +402,22 @@ export const adminService = {
   },
   impersonate: async (id: string) => {
     const response = await API_CLIENT.post(`/auth/admin/switch-user/${id}`);
+    return response.data;
+  },
+  getCoupons: async (params?: { page?: number; limit?: number; search?: string }) => {
+    const response = await API_CLIENT.get("/admin/coupons", { params });
+    return response.data;
+  },
+  createCoupon: async (payload: any) => {
+    const response = await API_CLIENT.post("/admin/coupons", payload);
+    return response.data;
+  },
+  updateCoupon: async (id: string, payload: any) => {
+    const response = await API_CLIENT.put(`/admin/coupons/${id}`, payload);
+    return response.data;
+  },
+  deleteCoupon: async (id: string) => {
+    const response = await API_CLIENT.delete(`/admin/coupons/${id}`);
     return response.data;
   },
 };

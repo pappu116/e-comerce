@@ -5,7 +5,6 @@
 import Link from "next/link"
 import { Facebook, Instagram, Twitter, Github, Send, ShieldCheck, Globe, Zap } from "lucide-react"
 import { Input } from "@/app/components/ui/input"
-import { Button } from "@/app/components/ui/button"
 
 export default function Footer() {
   return (

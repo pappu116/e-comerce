@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/store/authStore";
+import { useCart } from "@/app/store/cartStore";
 
 // ================== InputField Component ==================
 const InputField = ({ type, placeholder, value, onChange }: any) => (
@@ -47,6 +48,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     if (result.success) {
       // একটু সময় দিয়ে store আপডেট হতে দাও
       await new Promise(resolve => setTimeout(resolve, 100));
+      await useCart.getState().mergeGuestCart();
 
       const currentUser = useAuth.getState().user;
 
@@ -136,3 +138,5 @@ const handleSubmit = async (e: React.FormEvent) => {
     </div>
   );
 }
+
+

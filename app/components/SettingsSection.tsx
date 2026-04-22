@@ -1,10 +1,11 @@
 
 "use client";
+/* eslint-disable @next/next/no-img-element */
 import { useState, useRef } from "react";
 import { 
   User, Phone, Calendar, Mail, Settings, Camera, 
   ShieldCheck, Globe, Save, CheckCircle2, UserCircle2,
-  Fingerprint, Smartphone, Link as LinkIcon, ChevronDown
+  Fingerprint, Smartphone, ChevronDown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 

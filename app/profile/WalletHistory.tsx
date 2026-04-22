@@ -5,8 +5,8 @@ import {
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, CartesianGrid 
 } from "recharts";
 import { 
-  Wallet, ArrowUpRight, ArrowDownLeft, ShoppingCart, 
-  PlusCircle, History, CreditCard 
+  Wallet, ArrowDownLeft, ShoppingCart, 
+  PlusCircle, History
 } from "lucide-react";
 import { motion } from "framer-motion";
 

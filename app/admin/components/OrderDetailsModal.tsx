@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 import { X, Package, Truck, CreditCard, User, MapPin, Phone, Hash, Calendar } from 'lucide-react';
 
 interface OrderDetailsModalProps {

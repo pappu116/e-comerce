@@ -4,11 +4,9 @@
 import React from "react";
 import Image from "next/image";
 import { 
-  Users, 
   ShieldCheck, 
   Zap, 
   Award, 
-  ShoppingBag, 
   Truck, 
   Heart 
 } from "lucide-react";

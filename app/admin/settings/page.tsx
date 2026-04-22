@@ -86,7 +86,11 @@ type PaginationState = {
 
 const PAGE_SIZES = [10, 50, 100] as const;
 const inputClass =
-  "h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition-colors focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950";
+  "h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950";
+const ghostButtonClass =
+  "inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold transition-colors hover:bg-slate-100 disabled:opacity-70 dark:border-slate-700 dark:hover:bg-slate-800";
+const pagerButtonClass =
+  "rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold transition-colors hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800";
 
 const readString = (value: unknown, fallback = "") =>
   typeof value === "string" ? value : fallback;
@@ -263,6 +267,7 @@ export default function AdminSettingsPage() {
   const [payments, setPayments] = useState<PaymentsSettings>(defaultPayments);
   const [notifications, setNotifications] = useState<NotificationSettings>(defaultNotifications);
   const [allowedIpsInput, setAllowedIpsInput] = useState("");
+  const [storePasswordInput, setStorePasswordInput] = useState("");
 
   const [logs, setLogs] = useState<SystemLogEntry[]>([]);
   const [logSearchInput, setLogSearchInput] = useState("");
@@ -304,6 +309,7 @@ export default function AdminSettingsPage() {
       setPayments(nextPayments);
       setNotifications(nextNotifications);
       setAllowedIpsInput(nextSecurity.allowedAdminIps.join("\n"));
+      setStorePasswordInput("");
       setUpdatedAt(readString(meta.updatedAt));
     } catch (fetchError) {
       setError(handleApiError(fetchError));
@@ -381,8 +387,10 @@ export default function AdminSettingsPage() {
         response = await adminSettingsService.updatePayments({
           ...payments,
           allowedMethods: [...new Set(payments.allowedMethods)],
+          ...(storePasswordInput.trim() ? { storePassword: storePasswordInput.trim() } : {}),
         });
         setPayments(normalizePayments((response?.settings || {}).payments));
+        setStorePasswordInput("");
       } else {
         response = await adminSettingsService.updateNotifications(notifications);
       }
@@ -421,7 +429,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <header className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950">
         <div>
           <h1 className="text-3xl font-black tracking-tight">System Settings</h1>
@@ -431,7 +439,7 @@ export default function AdminSettingsPage() {
         <button
           onClick={() => loadSettings(true)}
           disabled={refreshing}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100 disabled:opacity-70 dark:border-slate-700 dark:hover:bg-slate-800"
+          className={ghostButtonClass}
         >
           {refreshing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
           Refresh
@@ -511,6 +519,9 @@ export default function AdminSettingsPage() {
                   </select>
                 </Field>
                 <Field label="Store ID"><input className={inputClass} value={payments.storeId} onChange={(e) => setPayments((p) => ({ ...p, storeId: e.target.value }))} /></Field>
+                <Field label="Store Password (leave blank to keep current)">
+                  <input type="password" className={inputClass} value={storePasswordInput} onChange={(e) => setStorePasswordInput(e.target.value)} />
+                </Field>
                 <Field label="Refund Window (days)"><input type="number" min={0} max={90} className={inputClass} value={payments.refundWindowDays} onChange={(e) => setPayments((p) => ({ ...p, refundWindowDays: Number(e.target.value) }))} /></Field>
                 <Field label="Tax Percent (%)"><input type="number" min={0} max={100} className={inputClass} value={payments.taxPercent} onChange={(e) => setPayments((p) => ({ ...p, taxPercent: Number(e.target.value) }))} /></Field>
                 <Field label="Flat Shipping Charge"><input type="number" min={0} className={inputClass} value={payments.shippingChargeFlat} onChange={(e) => setPayments((p) => ({ ...p, shippingChargeFlat: Number(e.target.value) }))} /></Field>
@@ -568,7 +579,7 @@ export default function AdminSettingsPage() {
               <h2 className="text-xl font-black tracking-tight">System Log</h2>
               <div className="flex flex-wrap items-center gap-3">
                 <input className={`${inputClass} min-w-[260px] flex-1`} value={logSearchInput} onChange={(e) => setLogSearchInput(e.target.value)} placeholder="Search action, section, actor..." />
-                <button onClick={loadSystemLog} disabled={logLoading} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100 disabled:opacity-70 dark:border-slate-700 dark:hover:bg-slate-800">
+                <button onClick={loadSystemLog} disabled={logLoading} className={ghostButtonClass}>
                   {logLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                   Refresh
                 </button>
@@ -614,9 +625,9 @@ export default function AdminSettingsPage() {
                   <span>Showing {logStart}-{logEnd} of {logPagination.total}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50" onClick={() => setLogPage((p) => Math.max(1, p - 1))} disabled={logLoading || !logPagination.hasPrevPage}>Previous</button>
+                  <button className={pagerButtonClass} onClick={() => setLogPage((p) => Math.max(1, p - 1))} disabled={logLoading || !logPagination.hasPrevPage}>Previous</button>
                   <span className="text-xs text-muted-foreground">Page {logPagination.page} of {logPagination.totalPages}</span>
-                  <button className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-50" onClick={() => setLogPage((p) => Math.min(logPagination.totalPages, p + 1))} disabled={logLoading || !logPagination.hasNextPage}>Next</button>
+                  <button className={pagerButtonClass} onClick={() => setLogPage((p) => Math.min(logPagination.totalPages, p + 1))} disabled={logLoading || !logPagination.hasNextPage}>Next</button>
                 </div>
               </div>
             </div>
@@ -701,7 +712,7 @@ function SaveButton({ onClick, loading }: { onClick: () => void; loading: boolea
     <button
       onClick={onClick}
       disabled={loading}
-      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 disabled:opacity-70"
+      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-colors hover:bg-indigo-500 disabled:opacity-70"
     >
       {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
       Save Settings

@@ -298,6 +298,7 @@
 
 
 'use client';
+/* eslint-disable @next/next/no-img-element */
 import { useState, useEffect } from 'react';
 import { X, Upload, Save, Trash2 } from 'lucide-react';
 import { getImageUrl as resolveImageUrl } from '@/app/lib/apiClient';

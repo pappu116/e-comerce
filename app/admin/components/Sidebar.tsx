@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, Package, ShoppingCart, Users, Settings, X, 
   BarChart3, ShieldCheck, CreditCard, 
-  Smartphone, LogOut
+  Smartphone, LogOut, TicketPercent
 } from 'lucide-react';
 import { orderService } from '@/app/lib/apiClient'; 
 import { useAuth } from '@/app/store/authStore'; // ✅ Zustand Store ইমপোর্ট করুন
@@ -44,6 +44,7 @@ const menuGroups: MenuGroup[] = [
     group: "Finance & Security",
     items: [
       { href: '/admin/payments', label: 'Payments', icon: CreditCard },
+      { href: '/admin/coupons', label: 'Coupons', icon: TicketPercent },
       { href: '/admin/devices', label: 'Device Tracking', icon: Smartphone },
       { href: '/admin/security', label: 'Security', icon: ShieldCheck },
     ]

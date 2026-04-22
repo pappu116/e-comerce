@@ -12,17 +12,25 @@ export interface CartItem {
   images: string[];
   category?: string;
   stock?: number;
+  variant?: {
+    key?: string;
+    size?: string;
+    color?: string;
+    sku?: string;
+    image?: string;
+  } | null;
 }
 
 interface CartStore {
   items: CartItem[];
   orders: any[];
   hydrateCart: () => Promise<void>;
+  mergeGuestCart: () => Promise<void>;
   addToCart: (product: any, quantity?: number) => Promise<void>;
-  increase: (id: string) => Promise<void>;
-  decrease: (id: string) => Promise<void>;
-  updateQuantity: (id: string, quantity: number) => Promise<void>;
-  removeFromCart: (id: string) => Promise<void>;
+  increase: (id: string, variantKey?: string) => Promise<void>;
+  decrease: (id: string, variantKey?: string) => Promise<void>;
+  updateQuantity: (id: string, quantity: number, variantKey?: string) => Promise<void>;
+  removeFromCart: (id: string, variantKey?: string) => Promise<void>;
   clearCart: () => Promise<void>;
   completeOrder: (newOrder: any) => void;
 }
@@ -32,6 +40,11 @@ const hasToken = () => isBrowser() && Boolean(localStorage.getItem("token"));
 
 const getItemId = (item: any) =>
   String(item?._id || item?.id || item?.product?._id || item?.product?.id || "");
+const getVariantKey = (item: any) => String(item?.variant?.key || "");
+const lineKey = (id: string, variantKey = "") => `${String(id)}::${String(variantKey || "")}`;
+const resolveVariantKey = (items: CartItem[], id: string, variantKey = "") =>
+  String(variantKey || items.find((entry) => entry.id === id)?.variant?.key || "");
+const validProductId = (id: string) => /^[0-9a-fA-F]{24}$/.test(String(id || ""));
 
 const normalizeProduct = (raw: any): CartItem | null => {
   const id = getItemId(raw);
@@ -57,6 +70,7 @@ const normalizeProduct = (raw: any): CartItem | null => {
         : [],
     category: product?.category,
     stock: Number(product?.stock ?? 0) || 0,
+    variant: raw?.variant || product?.variant || null,
   };
 };
 
@@ -83,12 +97,55 @@ export const useCart = create<CartStore>()(
         }
       },
 
+      mergeGuestCart: async () => {
+        if (!hasToken()) return;
+
+        const localItems = [...get().items];
+        if (!localItems.length) {
+          await get().hydrateCart();
+          return;
+        }
+
+        try {
+          const remoteData = await cartService.get();
+          const remoteItems = normalizeBackendCart(remoteData?.cart);
+          const merged = new Map<
+            string,
+            { productId: string; quantity: number; variantKey: string }
+          >();
+
+          const pushLine = (item: any) => {
+            const productId = String(getItemId(item) || "");
+            if (!validProductId(productId)) return;
+            const variantKey = String(getVariantKey(item) || "");
+            const key = lineKey(productId, variantKey);
+            const prev = merged.get(key);
+            merged.set(key, {
+              productId,
+              variantKey,
+              quantity: Math.min(99, (prev?.quantity || 0) + Math.max(1, Number(item?.quantity || 1))),
+            });
+          };
+
+          remoteItems.forEach(pushLine);
+          localItems.forEach(pushLine);
+
+          await cartService.replace(Array.from(merged.values()));
+          const synced = await cartService.get();
+          set({ items: normalizeBackendCart(synced?.cart) });
+        } catch {
+          await get().hydrateCart();
+        }
+      },
+
       addToCart: async (product, quantity = 1) => {
         const normalized = normalizeProduct({ ...product, quantity });
         if (!normalized) return;
+        const variantKey = getVariantKey(product);
+        const target = lineKey(normalized.id, variantKey);
 
         set((state) => {
-          const index = state.items.findIndex((item) => item.id === normalized.id);
+          const index = state.items.findIndex((item) => lineKey(item.id, getVariantKey(item)) === target);
           if (index < 0) {
             return { items: [...state.items, normalized] };
           }
@@ -103,7 +160,7 @@ export const useCart = create<CartStore>()(
 
         if (!hasToken()) return;
         try {
-          const data = await cartService.add(normalized.id, quantity);
+          const data = await cartService.add(normalized.id, quantity, variantKey);
           if (data?.cart) {
             set({ items: normalizeBackendCart(data.cart) });
           }
@@ -112,33 +169,37 @@ export const useCart = create<CartStore>()(
         }
       },
 
-      increase: async (id) => {
-        const item = get().items.find((entry) => entry.id === id);
+      increase: async (id, variantKey = "") => {
+        const key = resolveVariantKey(get().items, id, variantKey);
+        const item = get().items.find((entry) => lineKey(entry.id, getVariantKey(entry)) === lineKey(id, key));
         if (!item) return;
-        await get().updateQuantity(id, item.quantity + 1);
+        await get().updateQuantity(id, item.quantity + 1, key);
       },
 
-      decrease: async (id) => {
-        const item = get().items.find((entry) => entry.id === id);
+      decrease: async (id, variantKey = "") => {
+        const key = resolveVariantKey(get().items, id, variantKey);
+        const item = get().items.find((entry) => lineKey(entry.id, getVariantKey(entry)) === lineKey(id, key));
         if (!item) return;
         if (item.quantity <= 1) {
-          await get().removeFromCart(id);
+          await get().removeFromCart(id, key);
           return;
         }
-        await get().updateQuantity(id, item.quantity - 1);
+        await get().updateQuantity(id, item.quantity - 1, key);
       },
 
-      updateQuantity: async (id, quantity) => {
+      updateQuantity: async (id, quantity, variantKey = "") => {
         const nextQty = Math.max(1, Number(quantity) || 1);
+        const key = resolveVariantKey(get().items, id, variantKey);
+        const target = lineKey(id, key);
         set((state) => ({
           items: state.items.map((item) =>
-            item.id === id ? { ...item, quantity: nextQty } : item
+            lineKey(item.id, getVariantKey(item)) === target ? { ...item, quantity: nextQty } : item
           ),
         }));
 
         if (!hasToken()) return;
         try {
-          const data = await cartService.update(id, nextQty);
+          const data = await cartService.update(id, nextQty, key);
           if (data?.cart) {
             set({ items: normalizeBackendCart(data.cart) });
           }
@@ -147,14 +208,16 @@ export const useCart = create<CartStore>()(
         }
       },
 
-      removeFromCart: async (id) => {
+      removeFromCart: async (id, variantKey = "") => {
+        const key = resolveVariantKey(get().items, id, variantKey);
+        const target = lineKey(id, key);
         set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
+          items: state.items.filter((item) => lineKey(item.id, getVariantKey(item)) !== target),
         }));
 
         if (!hasToken()) return;
         try {
-          const data = await cartService.remove(id);
+          const data = await cartService.remove(id, key);
           if (data?.cart) {
             set({ items: normalizeBackendCart(data.cart) });
           }
@@ -188,4 +251,3 @@ export const useCart = create<CartStore>()(
     }
   )
 );
-

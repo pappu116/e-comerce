@@ -35,6 +35,7 @@ export const adminSettingsService = {
     sslcommerzEnabled: boolean;
     sslcommerzMode: "sandbox" | "live";
     storeId?: string;
+    storePassword?: string;
     codEnabled: boolean;
     allowedMethods: Array<"sslcommerz" | "cod" | "bkash" | "nagad">;
     autoCapture: boolean;

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export { default } from "./dashboard-overview-dynamic";
 
-function DashboardOverviewLegacy({ setActiveTab }: { setActiveTab: (id: string) => void }) {
+export function DashboardOverviewLegacy({ setActiveTab }: { setActiveTab: (id: string) => void }) {
   return (
     <div className="space-y-8">
       {/* ১. প্রোমো ব্যানার (ই-কমার্সের জন্য মাস্ট) */}

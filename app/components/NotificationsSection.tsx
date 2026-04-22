@@ -2,10 +2,10 @@
 "use client";
 import { useState } from "react";
 import { 
-  BellRing, Truck, Tag, CreditCard, ShoppingBag, 
+  BellRing, Truck, Tag, CreditCard, 
   Mail, MessageSquare, Monitor, Bell, CheckCircle 
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export default function NotificationsSection() {
   const [settings, setSettings] = useState({

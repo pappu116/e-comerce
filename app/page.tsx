@@ -5,18 +5,18 @@ import ProductCard from "@/app/components/product-card"
 // ১. Async Function to fetch products
 async function getProducts() {
   try {
-    const apiBase = (
+    const runtimeBase =
       process.env.NEXT_PUBLIC_API_URL ||
       process.env.API_URL ||
-      "http://localhost:5000"
-    ).replace(/\/+$/, "");
+      (process.env.NODE_ENV !== "production" ? "http://localhost:5000" : "");
+    if (!runtimeBase.trim()) return [];
+    const apiBase = runtimeBase.replace(/\/+$/, "");
     const normalizedApiBase = apiBase.endsWith("/api") ? apiBase : `${apiBase}/api`;
     const res = await fetch(`${normalizedApiBase}/products`, {
-      cache: 'no-store', // Fresh data anar jonno
+      cache: "no-store",
     });
 
     if (!res.ok) {
-      console.error("Failed to fetch data from backend");
       return []; // Error hole empty array pathabe jate map function crash na kore
     }
 
@@ -29,8 +29,7 @@ async function getProducts() {
     if (Array.isArray(data)) return data;
 
     return []; // Onno kono format hole safe thakar jonno empty array
-  } catch (error) {
-    console.error("Backend connection error:", error);
+  } catch {
     return []; // Backend bondho thakle empty array pathabe
   }
 }

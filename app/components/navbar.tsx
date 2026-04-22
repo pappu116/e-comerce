@@ -14,7 +14,7 @@ import { useWishlist } from "@/app/store/wishlistStore";
 
 export default function Navbar() {
   const cartItemsCount = useCart((state) => state.items.length);
-  const hydrateCart = useCart((state) => state.hydrateCart);
+  const mergeGuestCart = useCart((state) => state.mergeGuestCart);
   const { isLoggedIn, user, logout } = useAuth(); 
   const hydrateWishlist = useWishlist((state) => state.hydrateWishlist);
   const [mounted, setMounted] = useState(false);
@@ -26,12 +26,12 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    hydrateCart();
+    mergeGuestCart();
     hydrateWishlist();
-  }, [isLoggedIn, hydrateCart, hydrateWishlist]);
+  }, [isLoggedIn, mergeGuestCart, hydrateWishlist]);
 
   return (
-    <nav className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-[100] transition-all">
+    <nav className="sticky top-0 z-[100] border-b border-border/60 bg-background/85 backdrop-blur-md transition-all">
       <div className="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
         
         {/* Logo */}
@@ -50,7 +50,7 @@ export default function Navbar() {
           {/* Cart Icon */}
           <Link 
             href="/cart" 
-            className="relative p-2.5 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-foreground group"
+            className="group relative rounded-xl p-2.5 text-foreground transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
           >
             <ShoppingCart size={22} className="group-hover:scale-110 transition-transform" />
             {mounted && cartItemsCount > 0 && (
@@ -116,7 +116,7 @@ export default function Navbar() {
 
                   <button 
                     onClick={() => logout()}
-                    className="p-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                    className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                     title="Logout"
                   >
                     <LogOut size={20} />
@@ -125,7 +125,7 @@ export default function Navbar() {
               ) : (
                 <Link 
                   href="/login" 
-                  className="hidden sm:flex items-center gap-2 text-sm font-black px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-xl shadow-indigo-600/20 active:scale-95 uppercase tracking-wider"
+                  className="hidden items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-95 sm:flex"
                 >
                   Login
                 </Link>

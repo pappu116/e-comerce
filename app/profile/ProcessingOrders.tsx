@@ -2,7 +2,7 @@
 
 "use client";
 import { motion } from "framer-motion";
-import { Truck, MapPin, Package, Navigation, ArrowRight } from "lucide-react";
+import { Truck, MapPin, Package } from "lucide-react";
 
 export default function ProcessingOrders() {
   // লোকেশন ডাটা (আপনি চাইলে ডাইনামিক করতে পারেন)
